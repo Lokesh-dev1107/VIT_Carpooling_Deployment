@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Carpool Hub</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 30px auto; padding: 0 20px; background: #f4f6f8; }
+    h1, h2 { color: #333; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; }
+    input { width: 97%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #a71d2a; }
+    .btn-success { background: #28a745; }
+    .btn-success:hover { background: #1e7e34; }
+    .ride-item { border-left: 4px solid #007bff; padding: 12px; margin-bottom: 10px; background: #fafafa; }
+    .ride-accepted { border-left: 4px solid #28a745; background: #f0fff4; }
+    .actions { margin-top: 10px; display: flex; gap: 10px; }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; }
+    .badge-open { background: #d97706; }
+    .badge-accepted { background: #28a745; }
+  </style>
+</head>
+<body>
+
+  <h1>Campus Carpool Hub</h1>
+
+  <!-- POST: CREATE A RIDE -->
+  <div class="card">
+    <h2>Post a Ride Request (Student)</h2>
+    <form id="rideForm">
+      <div class="form-group">
+        <label>Destination:</label>
+        <input type="text" id="destination" required placeholder="e.g. Airport Terminal 1">
+      </div>
+      <div class="form-group">
+        <label>Departure Time:</label>
+        <input type="text" id="departureTime" required placeholder="e.g. 05:00 PM">
+      </div>
+      <div class="form-group">
+        <label>Available Seats:</label>
+        <input type="number" id="availableSeats" required min="1" value="3">
+      </div>
+      <div class="form-group">
+        <label>Cost Per Seat (₹):</label>
+        <input type="number" id="costPerSeat" required value="150">
+      </div>
+      <div class="form-group">
+        <label>Student Contact Number:</label>
+        <input type="text" id="studentContact" required placeholder="+919876543210">
+      </div>
+      <button type="submit">Post Ride</button>
+    </form>
+  </div>
+
+  <!-- SECTION 1: OPEN RIDE REQUESTS -->
+  <div class="card">
+    <h2>Open Requests (Waiting for Driver)</h2>
+    <div id="openRidesList">Loading open requests...</div>
+  </div>
+
+  <!-- SECTION 2: ACTIVE / ACCEPTED RIDES -->
+  <div class="card">
+    <h2>Active / Booked Rides</h2>
+    <div id="acceptedRidesList">Loading active rides...</div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:5001/api/rides';
+
+    // 1. FETCH & DISPLAY RIDES (SPLIT INTO OPEN & ACCEPTED)
+    async function loadRides() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        const rides = await res.json();
+
+        const openContainer = document.getElementById('openRidesList');
+        const acceptedContainer = document.getElementById('acceptedRidesList');
+
+        const openRides = rides.filter(r => r.status !== 'ACCEPTED');
+        const acceptedRides = rides.filter(r => r.status === 'ACCEPTED');
+
+        // RENDER OPEN RIDES
+        if (openRides.length === 0) {
+          openContainer.innerHTML = '<p style="color: #666;">No open ride requests right now.</p>';
+        } else {
+          openContainer.innerHTML = openRides.map(ride => `
+            <div class="ride-item">
+              <span class="badge badge-open">OPEN</span><br><br>
+              <strong>To:</strong> ${ride.destination} | 
+              <strong>Time:</strong> ${ride.departureTime} | 
+              <strong>Seats:</strong> ${ride.availableSeats} | 
+              <strong>Cost:</strong> ₹${ride.costPerSeat}<br>
+              <small><strong>Student Contact:</strong> ${ride.studentContact}</small>
+              
+              <div class="actions">
+                <button class="btn-success" onclick="acceptRide('${ride._id}')">Accept Ride (Driver)</button>
+                <button class="btn-danger" onclick="cancelRide('${ride._id}')">Cancel Ride (Student)</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // RENDER ACCEPTED RIDES
+        if (acceptedRides.length === 0) {
+          acceptedContainer.innerHTML = '<p style="color: #666;">No active or booked rides currently.</p>';
+        } else {
+          acceptedContainer.innerHTML = acceptedRides.map(ride => `
+            <div class="ride-item ride-accepted">
+              <span class="badge badge-accepted">ACCEPTED</span><br><br>
+              <strong>To:</strong> ${ride.destination} | 
+              <strong>Time:</strong> ${ride.departureTime} | 
+              <strong>Cost:</strong> ₹${ride.costPerSeat}<br>
+              <small><strong>Student:</strong> ${ride.studentContact}</small><br>
+              <small style="color: #1e7e34; font-weight: bold;">
+                <strong>Matched Driver Contact:</strong> ${ride.driverContact || 'N/A'}
+              </small>
+              
+              <div class="actions">
+                <button class="btn-danger" onclick="cancelRide('${ride._id}')">Cancel Ride</button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+      } catch (err) {
+        document.getElementById('openRidesList').innerHTML = `<p style="color: red;">Error connecting to backend server on port 5001. (${err.message})</p>`;
+        document.getElementById('acceptedRidesList').innerHTML = '';
+      }
+    }
+
+    // 2. CREATE A NEW RIDE (POST)
+    document.getElementById('rideForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newRide = {
+        destination: document.getElementById('destination').value,
+        departureTime: document.getElementById('departureTime').value,
+        availableSeats: Number(document.getElementById('availableSeats').value),
+        costPerSeat: Number(document.getElementById('costPerSeat').value),
+        studentContact: document.getElementById('studentContact').value
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRide)
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'Error creating ride request');
+          return;
+        }
+
+        document.getElementById('rideForm').reset();
+        loadRides();
+      } catch (err) {
+        alert('Network error while creating ride: ' + err.message);
+      }
+    });
+
+    // 3. ACCEPT A RIDE (PUT)
+    async function acceptRide(id) {
+      const driverContact = prompt('Enter your driver contact number:');
+      if (!driverContact) return;
+
+      try {
+        const res = await fetch(`${API_URL}/${id}/accept`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ driverContact })
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'Error accepting ride');
+          return;
+        }
+
+        loadRides();
+      } catch (err) {
+        alert('Network error while accepting ride: ' + err.message);
+      }
+    }
+
+    // 4. CANCEL A RIDE (DELETE)
+    async function cancelRide(id) {
+      if (!confirm('Are you sure you want to cancel this ride?')) return;
+
+      try {
+        const res = await fetch(`${API_URL}/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'Error cancelling ride');
+          return;
+        }
+
+        loadRides();
+      } catch (err) {
+        alert('Network error while cancelling ride: ' + err.message);
+      }
+    }
+
+    // Initial load when page opens
+    loadRides();
+  </script>
+</body>
+</html>
