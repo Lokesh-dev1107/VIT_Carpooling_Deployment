@@ -9,10 +9,21 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// 1. CONNECT TO MONGODB ATLAS
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('SUCCESS: Connected to MongoDB Atlas!'))
-  .catch((err) => console.error('DB Connection Failed:', err.message));
+// Health check route (prevents 'Cannot GET /' on base URL)
+app.get('/', (req, res) => {
+  res.send('Campus Carpool Hub API is running!');
+});
+
+// 1. CONNECT TO MONGODB ATLAS (Fallback check for both variable naming styles)
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error('CRITICAL ERROR: Neither MONGODB_URI nor MONGO_URI is set in environment variables!');
+} else {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('SUCCESS: Connected to MongoDB Atlas!'))
+    .catch((err) => console.error('DB Connection Failed:', err.message));
+}
 
 // 2. RIDE DATA BLUEPRINT (SCHEMA)
 const rideSchema = new mongoose.Schema({
@@ -40,9 +51,7 @@ app.post('/api/rides', async (req, res) => {
   }
 });
 
-// READ: Fetch ALL active rides (open + accepted) — frontend splits them for display.
-// FIX: previously filtered to status: 'OPEN' only, so accepted rides vanished
-// from the response the moment they were accepted, making "accept" look broken.
+// READ: Fetch ALL active rides (open + accepted)
 app.get('/api/rides', async (req, res) => {
   try {
     const rides = await Ride.find({ status: { $ne: 'CANCELLED' } }).sort({ createdAt: -1 });
@@ -89,6 +98,6 @@ app.delete('/api/rides/:id', async (req, res) => {
   }
 });
 
-// START SERVER
-const PORT = 5001;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// START SERVER (Uses dynamic cloud port or defaults to 5001 locally)
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
