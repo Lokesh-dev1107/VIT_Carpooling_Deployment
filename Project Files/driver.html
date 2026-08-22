@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Carpool Hub — Drivers</title>
+  <style>
+    :root {
+      --bg: #12172B;
+      --card: #1B2140;
+      --card-border: #2A3158;
+      --text: #F2F0EA;
+      --muted: #9098B8;
+      --amber: #E8A33D;
+      --teal: #3E9C8F;
+      --coral: #E85C4A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 22px; margin: 0; }
+    .student-link { color: var(--amber); text-decoration: none; border: 1px solid var(--amber); padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; }
+    .student-link:hover { background: rgba(232,163,61,0.1); }
+    h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 14px; }
+    .card { background: var(--card); border: 1px solid var(--card-border); padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
+    input {
+      width: 100%; padding: 9px 10px; border: 1px solid var(--card-border);
+      border-radius: 6px; background: #0F1428; color: var(--text); font-size: 14px;
+    }
+    input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+    button { background: var(--amber); color: #1a1400; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    button:hover { filter: brightness(1.08); }
+    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab { padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .tab.active { background: rgba(232,163,61,0.15); color: var(--amber); }
+    .error-text { color: var(--coral); font-size: 13px; margin-top: 6px; }
+    .welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .welcome span { color: var(--muted); font-size: 14px; }
+
+    .group-item { border-left: 4px solid var(--teal); padding: 14px 16px; margin-bottom: 12px; background: #142C29; border-radius: 0 8px 8px 0; }
+    .route { font-weight: 700; font-size: 16px; }
+    .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .members { margin-top: 10px; font-size: 13px; }
+    .members ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+    .empty { color: var(--muted); font-size: 14px; }
+    .actions { margin-top: 12px; }
+    #driverSection { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🚘 Driver Portal</h1>
+    <a class="student-link" href="index.html">← Back to student view</a>
+  </header>
+
+  <div id="authSection">
+    <div class="tabs">
+      <div class="tab active" id="loginTab" onclick="showTab('login')">Log In</div>
+      <div class="tab" id="signupTab" onclick="showTab('signup')">Sign Up</div>
+    </div>
+
+    <div class="card" id="loginCard">
+      <h2>Driver Log In</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="loginPhone" required placeholder="+919876543210">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit">Log In</button>
+        <div class="error-text" id="loginError"></div>
+      </form>
+    </div>
+
+    <div class="card" id="signupCard" style="display:none;">
+      <h2>Driver Sign Up</h2>
+      <form id="signupForm">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signupName" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="signupPhone" required placeholder="+919876543210">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signupPassword" required minlength="6">
+        </div>
+        <button type="submit">Create Account</button>
+        <div class="error-text" id="signupError"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="driverSection">
+    <div class="welcome">
+      <span>Logged in as <strong id="driverNameLabel"></strong></span>
+      <button class="btn-secondary" onclick="logout()">Log Out</button>
+    </div>
+
+    <div class="card">
+      <h2>Ride Requests Waiting for a Driver</h2>
+      <div id="pendingList">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://vit-carpooling-deployment.onrender.com/api';
+    let driver = JSON.parse(localStorage.getItem('carpool_driver') || 'null');
+
+    function showTab(tab) {
+      document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+      document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
+      document.getElementById('loginCard').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('signupCard').style.display = tab === 'signup' ? 'block' : 'none';
+    }
+
+    function renderAuthState() {
+      if (driver) {
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('driverSection').style.display = 'block';
+        document.getElementById('driverNameLabel').textContent = driver.name;
+        loadPending();
+      } else {
+        document.getElementById('authSection').style.display = 'block';
+        document.getElementById('driverSection').style.display = 'none';
+      }
+    }
+
+    function logout() {
+      driver = null;
+      localStorage.removeItem('carpool_driver');
+      renderAuthState();
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('signupError');
+      errorEl.textContent = '';
+
+      const payload = {
+        name: document.getElementById('signupName').value,
+        phone: document.getElementById('signupPhone').value,
+        password: document.getElementById('signupPassword').value
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/drivers/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error || 'Signup failed'; return; }
+
+        driver = data.driver;
+        localStorage.setItem('carpool_driver', JSON.stringify(driver));
+        renderAuthState();
+      } catch (err) {
+        errorEl.textContent = 'Network error: ' + err.message;
+      }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('loginError');
+      errorEl.textContent = '';
+
+      const payload = {
+        phone: document.getElementById('loginPhone').value,
+        password: document.getElementById('loginPassword').value
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/drivers/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error || 'Login failed'; return; }
+
+        driver = data.driver;
+        localStorage.setItem('carpool_driver', JSON.stringify(driver));
+        renderAuthState();
+      } catch (err) {
+        errorEl.textContent = 'Network error: ' + err.message;
+      }
+    });
+
+    function fmtTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadPending() {
+      const container = document.getElementById('pendingList');
+      try {
+        const res = await fetch(`${API_URL}/driver/groups`);
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        const groups = await res.json();
+
+        if (groups.length === 0) {
+          container.innerHTML = '<p class="empty">No ride requests waiting right now.</p>';
+          return;
+        }
+
+        container.innerHTML = groups.map(g => {
+          const membersList = g.members.map(m => `<li>${m.name} — ${m.contact}</li>`).join('');
+          return `
+            <div class="group-item">
+              <div class="route">${g.origin} → ${g.destination}</div>
+              <div class="meta">${fmtTime(g.departureTime)} · ${g.members.length}/${g.totalSeats} seats filled · ₹${g.costPerSeat}/seat</div>
+              <div class="members">
+                <strong>Passengers:</strong>
+                <ul>${membersList}</ul>
+              </div>
+              <div class="actions">
+                <button onclick="acceptGroup('${g._id}')">Accept This Ride</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        container.innerHTML = `<p class="error-text">Error loading requests: ${err.message}</p>`;
+      }
+    }
+
+    async function acceptGroup(groupId) {
+      if (!confirm('Accept this ride request?')) return;
+
+      try {
+        const res = await fetch(`${API_URL}/groups/${groupId}/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ driverId: driver.id })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Error accepting ride'); return; }
+
+        alert('Ride confirmed! Passenger contacts are visible on the student page.');
+        loadPending();
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    setInterval(() => { if (driver) loadPending(); }, 15000);
+
+    renderAuthState();
+  </script>
+</body>
+</html>

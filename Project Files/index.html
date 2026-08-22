@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Carpool Hub — Students</title>
+  <style>
+    :root {
+      --bg: #12172B;
+      --card: #1B2140;
+      --card-border: #2A3158;
+      --text: #F2F0EA;
+      --muted: #9098B8;
+      --amber: #E8A33D;
+      --teal: #3E9C8F;
+      --coral: #E85C4A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    h1 { font-size: 22px; letter-spacing: 0.3px; margin: 0; }
+    .driver-link {
+      color: var(--amber);
+      text-decoration: none;
+      border: 1px solid var(--amber);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .driver-link:hover { background: rgba(232,163,61,0.1); }
+    h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 14px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-group { margin-bottom: 12px; flex: 1; min-width: 160px; }
+    label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
+    input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      background: #0F1428;
+      color: var(--text);
+      font-size: 14px;
+    }
+    input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
+    button {
+      background: var(--amber);
+      color: #1a1400;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger { background: var(--coral); color: #2a0d08; }
+    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
+    .join-row { display: flex; gap: 10px; }
+    .join-row input { flex: 1; }
+
+    .group-item {
+      border-left: 4px solid var(--amber);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #171C36;
+      border-radius: 0 8px 8px 0;
+    }
+    .group-item.pending { border-left-color: var(--teal); }
+    .group-item.confirmed { border-left-color: var(--teal); background: #142C29; }
+    .group-item.expired, .group-item.cancelled { border-left-color: #4A4F6A; opacity: 0.6; }
+
+    .group-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+    .route { font-weight: 700; font-size: 16px; }
+    .code { font-family: "SF Mono", Consolas, monospace; font-size: 13px; color: var(--amber); background: rgba(232,163,61,0.12); padding: 2px 8px; border-radius: 4px; }
+    .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+    .badge-forming { background: rgba(232,163,61,0.18); color: var(--amber); }
+    .badge-pending { background: rgba(62,156,143,0.18); color: var(--teal); }
+    .badge-confirmed { background: var(--teal); color: #08201c; }
+    .badge-expired, .badge-cancelled { background: rgba(154,159,183,0.15); color: var(--muted); }
+
+    .countdown { font-family: "SF Mono", Consolas, monospace; font-size: 12px; color: var(--amber); margin-top: 6px; }
+    .members { margin-top: 10px; font-size: 13px; }
+    .members ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+    .members li.host::after { content: " (host)"; color: var(--amber); }
+    .driver-info { margin-top: 8px; font-size: 13px; color: var(--teal); font-weight: 600; }
+    .actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .empty { color: var(--muted); font-size: 14px; }
+    .error-text { color: var(--coral); font-size: 13px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🚗 Campus Carpool Hub</h1>
+    <a class="driver-link" href="driver.html">Driver login →</a>
+  </header>
+
+  <div class="card">
+    <h2>Start a Ride Request</h2>
+    <form id="createForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Destination</label>
+          <input type="text" id="destination" required placeholder="e.g. Airport Terminal 1">
+        </div>
+        <div class="form-group">
+          <label>Departure Date &amp; Time</label>
+          <input type="datetime-local" id="departureTime" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Total Seats Needed</label>
+          <input type="number" id="totalSeats" required min="1" value="3">
+        </div>
+        <div class="form-group">
+          <label>Cost Per Seat (₹)</label>
+          <input type="number" id="costPerSeat" required value="150">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="hostName" required placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label>Your Contact</label>
+          <input type="text" id="hostContact" required placeholder="+919876543210">
+        </div>
+      </div>
+      <button type="submit">Create Group</button>
+      <div class="error-text" id="createError"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Join a Group with a Code</h2>
+    <div class="join-row">
+      <input type="text" id="joinCode" placeholder="Enter 6-character group code" maxlength="6" style="text-transform:uppercase;">
+      <input type="text" id="joinName" placeholder="Your name">
+      <input type="text" id="joinContact" placeholder="Your contact">
+      <button id="joinBtn">Join</button>
+    </div>
+    <div class="error-text" id="joinError"></div>
+  </div>
+
+  <div class="card">
+    <h2>Active Groups</h2>
+    <div id="groupsList">Loading...</div>
+  </div>
+
+  <script>
+    const API_URL = 'https://vit-carpooling-deployment.onrender.com/api';
+    let cachedGroups = [];
+
+    function fmtTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function countdownText(deadline) {
+      const ms = new Date(deadline).getTime() - Date.now();
+      if (ms <= 0) return 'Expired';
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      return `${m}:${s.toString().padStart(2, '0')} left to fill seats`;
+    }
+
+    function statusBadge(status) {
+      const map = {
+        FORMING: ['badge-forming', 'Forming'],
+        PENDING_DRIVER: ['badge-pending', 'Driver requested'],
+        CONFIRMED: ['badge-confirmed', 'Confirmed'],
+        EXPIRED: ['badge-expired', 'Expired'],
+        CANCELLED: ['badge-cancelled', 'Cancelled']
+      };
+      const [cls, label] = map[status] || ['badge-forming', status];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function renderGroups() {
+      const container = document.getElementById('groupsList');
+      if (cachedGroups.length === 0) {
+        container.innerHTML = '<p class="empty">No active ride groups right now. Start one above.</p>';
+        return;
+      }
+
+      container.innerHTML = cachedGroups.map(g => {
+        const seatsFilled = g.members.length;
+        const itemClass = g.status === 'CONFIRMED' ? 'confirmed'
+          : g.status === 'PENDING_DRIVER' ? 'pending'
+          : (g.status === 'EXPIRED' || g.status === 'CANCELLED') ? 'expired' : '';
+
+        const membersList = g.members.map(m =>
+          `<li class="${m.isHost ? 'host' : ''}">${m.name} — ${m.contact}</li>`
+        ).join('');
+
+        const driverBlock = g.status === 'CONFIRMED'
+          ? `<div class="driver-info">Driver: ${g.driverName} — ${g.driverContact}</div>`
+          : '';
+
+        const showCountdown = g.status === 'FORMING';
+        const countdownBlock = showCountdown
+          ? `<div class="countdown" data-deadline="${g.formingDeadline}">${countdownText(g.formingDeadline)}</div>`
+          : '';
+
+        const canAct = ['FORMING', 'PENDING_DRIVER', 'CONFIRMED'].includes(g.status);
+        const actions = canAct ? `
+          <div class="actions">
+            <button class="btn-secondary" onclick="leaveGroup('${g._id}')">Leave Group</button>
+            <button class="btn-danger" onclick="cancelGroup('${g._id}')">Cancel Ride (Host Only)</button>
+          </div>` : '';
+
+        return `
+          <div class="group-item ${itemClass}" data-id="${g._id}">
+            <div class="group-top">
+              <div>
+                <div class="route">${g.origin} → ${g.destination}</div>
+                <div class="meta">${fmtTime(g.departureTime)} · ${seatsFilled}/${g.totalSeats} seats · ₹${g.costPerSeat}/seat</div>
+              </div>
+              <div style="text-align:right;">
+                ${statusBadge(g.status)}
+                <div class="code">${g.groupCode}</div>
+              </div>
+            </div>
+            ${countdownBlock}
+            <div class="members">
+              <strong>Group members:</strong>
+              <ul>${membersList}</ul>
+            </div>
+            ${driverBlock}
+            ${actions}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadGroups() {
+      try {
+        const res = await fetch(`${API_URL}/groups`);
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        cachedGroups = await res.json();
+        renderGroups();
+      } catch (err) {
+        document.getElementById('groupsList').innerHTML = `<p class="error-text">Error connecting to backend: ${err.message}</p>`;
+      }
+    }
+
+    // Live-update countdowns every second without refetching
+    setInterval(() => {
+      document.querySelectorAll('.countdown').forEach(el => {
+        el.textContent = countdownText(el.dataset.deadline);
+      });
+    }, 1000);
+
+    // Refetch groups every 15s to pick up status changes (driver accepted, expired, etc.)
+    setInterval(loadGroups, 15000);
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('createError');
+      errorEl.textContent = '';
+
+      const payload = {
+        destination: document.getElementById('destination').value,
+        departureTime: document.getElementById('departureTime').value,
+        totalSeats: Number(document.getElementById('totalSeats').value),
+        costPerSeat: Number(document.getElementById('costPerSeat').value),
+        hostName: document.getElementById('hostName').value,
+        hostContact: document.getElementById('hostContact').value
+      };
+
+      try {
+        const res = await fetch(`${API_URL}/groups`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error || 'Error creating group'; return; }
+
+        alert(`Group created! Share this code with friends: ${data.group.groupCode}`);
+        document.getElementById('createForm').reset();
+        loadGroups();
+      } catch (err) {
+        errorEl.textContent = 'Network error: ' + err.message;
+      }
+    });
+
+    document.getElementById('joinBtn').addEventListener('click', async () => {
+      const errorEl = document.getElementById('joinError');
+      errorEl.textContent = '';
+
+      const code = document.getElementById('joinCode').value.trim().toUpperCase();
+      const name = document.getElementById('joinName').value.trim();
+      const contact = document.getElementById('joinContact').value.trim();
+
+      if (!code || !name || !contact) {
+        errorEl.textContent = 'Fill in code, name, and contact to join.';
+        return;
+      }
+
+      try {
+        const lookupRes = await fetch(`${API_URL}/groups/code/${code}`);
+        const lookupData = await lookupRes.json();
+        if (!lookupRes.ok) { errorEl.textContent = lookupData.error || 'Group not found'; return; }
+
+        const joinRes = await fetch(`${API_URL}/groups/${lookupData._id}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, contact })
+        });
+        const joinData = await joinRes.json();
+        if (!joinRes.ok) { errorEl.textContent = joinData.error || 'Error joining group'; return; }
+
+        document.getElementById('joinCode').value = '';
+        document.getElementById('joinName').value = '';
+        document.getElementById('joinContact').value = '';
+        loadGroups();
+      } catch (err) {
+        errorEl.textContent = 'Network error: ' + err.message;
+      }
+    });
+
+    async function leaveGroup(groupId) {
+      const contact = prompt('Enter the contact number you joined with:');
+      if (!contact) return;
+
+      try {
+        const res = await fetch(`${API_URL}/groups/${groupId}/leave`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contact })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Error leaving group'); return; }
+        loadGroups();
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    async function cancelGroup(groupId) {
+      const hostContact = prompt('Enter the HOST contact number to cancel this ride:');
+      if (!hostContact) return;
+      if (!confirm('This will cancel the ride for the entire group. Continue?')) return;
+
+      try {
+        const res = await fetch(`${API_URL}/groups/${groupId}/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hostContact })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Error cancelling group'); return; }
+        loadGroups();
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    loadGroups();
+  </script>
+</body>
+</html>
