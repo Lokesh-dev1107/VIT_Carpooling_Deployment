@@ -3,174 +3,199 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campus Carpool Hub — Students</title>
+  <title>Campus Carpool — Ride Board</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
     :root {
-      --bg: #12172B;
-      --card: #1B2140;
-      --card-border: #2A3158;
-      --text: #F2F0EA;
-      --muted: #9098B8;
-      --amber: #E8A33D;
-      --teal: #3E9C8F;
-      --coral: #E85C4A;
+      --paper: #FAFAF7;
+      --panel: #FFFFFF;
+      --ink: #1C1C1E;
+      --ink-soft: #55555C;
+      --line: #E1DFD8;
+      --indigo: #2B3A67;
+      --indigo-soft: #EEF0F6;
+      --sage: #5F7F63;
+      --sage-soft: #EBF1EC;
+      --brick: #A6402F;
+      --amber-dot: #B8863B;
     }
     * { box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px 20px 60px;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      margin: 0;
+      padding: 0 0 80px;
     }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    h1 { font-size: 22px; letter-spacing: 0.3px; margin: 0; }
-    .driver-link {
-      color: var(--amber);
-      text-decoration: none;
-      border: 1px solid var(--amber);
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .driver-link:hover { background: rgba(232,163,61,0.1); }
-    h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 14px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .form-group { margin-bottom: 12px; flex: 1; min-width: 160px; }
-    label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
-    input {
-      width: 100%;
-      padding: 9px 10px;
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      background: #0F1428;
-      color: var(--text);
-      font-size: 14px;
-    }
-    input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
-    button {
-      background: var(--amber);
-      color: #1a1400;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-    }
-    button:hover { filter: brightness(1.08); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-danger { background: var(--coral); color: #2a0d08; }
-    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
-    .join-row { display: flex; gap: 10px; }
-    .join-row input { flex: 1; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
 
-    .group-item {
-      border-left: 4px solid var(--amber);
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      background: #171C36;
-      border-radius: 0 8px 8px 0;
-    }
-    .group-item.pending { border-left-color: var(--teal); }
-    .group-item.confirmed { border-left-color: var(--teal); background: #142C29; }
-    .group-item.expired, .group-item.cancelled { border-left-color: #4A4F6A; opacity: 0.6; }
+    .masthead { border-bottom: 1px solid var(--line); padding: 36px 0 20px; margin-bottom: 36px; }
+    .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+    h1 { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 32px; margin: 0; letter-spacing: -0.2px; }
+    .driver-link { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 0.3px; color: var(--indigo); text-decoration: none; border-bottom: 1px solid var(--indigo); padding-bottom: 2px; white-space: nowrap; }
+    .driver-link:hover { color: var(--ink); border-color: var(--ink); }
 
-    .group-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-    .route { font-weight: 700; font-size: 16px; }
-    .code { font-family: "SF Mono", Consolas, monospace; font-size: 13px; color: var(--amber); background: rgba(232,163,61,0.12); padding: 2px 8px; border-radius: 4px; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-    .badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
-    .badge-forming { background: rgba(232,163,61,0.18); color: var(--amber); }
-    .badge-pending { background: rgba(62,156,143,0.18); color: var(--teal); }
-    .badge-confirmed { background: var(--teal); color: #08201c; }
-    .badge-expired, .badge-cancelled { background: rgba(154,159,183,0.15); color: var(--muted); }
+    .section-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 16px; }
+    .section-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+    h2 { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 19px; margin: 0; }
+    section { margin-bottom: 44px; }
 
-    .countdown { font-family: "SF Mono", Consolas, monospace; font-size: 12px; color: var(--amber); margin-top: 6px; }
-    .members { margin-top: 10px; font-size: 13px; }
-    .members ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
-    .members li.host::after { content: " (host)"; color: var(--amber); }
-    .driver-info { margin-top: 8px; font-size: 13px; color: var(--teal); font-weight: 600; }
-    .actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .empty { color: var(--muted); font-size: 14px; }
-    .error-text { color: var(--coral); font-size: 13px; margin-top: 6px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 24px 26px; }
+    .form-row { display: flex; gap: 18px; flex-wrap: wrap; }
+    .field { margin-bottom: 16px; flex: 1; min-width: 180px; }
+    .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 500; }
+    .field input { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 14px; }
+    .field input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(43,58,103,0.1); }
+
+    button { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 2px; padding: 11px 20px; cursor: pointer; letter-spacing: 0.1px; }
+    .btn-primary { background: var(--indigo); color: #fff; }
+    .btn-primary:hover { background: #223057; }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+    .btn-outline:hover { border-color: var(--ink); }
+    .btn-danger-text { background: transparent; border: none; color: var(--brick); font-weight: 600; padding: 8px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; }
+    .btn-danger-text:hover { color: #7d2f22; }
+
+    .join-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .join-row .field { margin-bottom: 0; }
+    .code-field input { text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; letter-spacing: 1px; }
+
+    .error-text { color: var(--brick); font-size: 13px; margin-top: 10px; }
+
+    .board { border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--panel); }
+    .row { display: flex; flex-direction: column; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: none; }
+    .row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+
+    .route { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 17px; }
+    .route .arrow { color: var(--ink-soft); font-weight: 400; margin: 0 6px; }
+    .meta-line { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+
+    .status-block { text-align: right; flex-shrink: 0; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase; font-weight: 500; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .dot-forming { background: var(--amber-dot); }
+    .dot-pending { background: var(--indigo); }
+    .dot-confirmed { background: var(--sage); }
+    .dot-inactive { background: #B7B5AC; }
+    .status-forming { color: var(--amber-dot); }
+    .status-pending { color: var(--indigo); }
+    .status-confirmed { color: var(--sage); }
+    .status-inactive { color: var(--ink-soft); }
+
+    .code-tag { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+    .countdown { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--amber-dot); margin-top: 10px; }
+
+    .members-block { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+    .members-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 600; }
+    .member-list { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+    .member-list li { padding: 2px 0; display: flex; justify-content: space-between; max-width: 420px; }
+    .member-list li .m-contact { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+    .host-flag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--indigo); border: 1px solid var(--indigo-soft); background: var(--indigo-soft); padding: 1px 6px; border-radius: 2px; margin-left: 8px; }
+
+    .driver-block { margin-top: 12px; background: var(--sage-soft); border: 1px solid #D6E4D8; padding: 10px 14px; border-radius: 2px; font-size: 13px; }
+    .driver-block strong { color: var(--sage); }
+
+    .row-actions { margin-top: 14px; display: flex; gap: 18px; align-items: center; }
+    .empty-state { padding: 40px 22px; text-align: center; color: var(--ink-soft); font-size: 14px; }
+
+    footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--line); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-soft); }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🚗 Campus Carpool Hub</h1>
-    <a class="driver-link" href="driver.html">Driver login →</a>
-  </header>
-
-  <div class="card">
-    <h2>Start a Ride Request</h2>
-    <form id="createForm">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Destination</label>
-          <input type="text" id="destination" required placeholder="e.g. Airport Terminal 1">
+  <div class="wrap">
+    <div class="masthead">
+      <div class="masthead-row">
+        <div>
+          <p class="eyebrow">Campus Transport Coordination</p>
+          <h1>Ride Board</h1>
         </div>
-        <div class="form-group">
-          <label>Departure Date &amp; Time</label>
-          <input type="datetime-local" id="departureTime" required>
-        </div>
+        <a class="driver-link" href="driver.html">Driver sign-in →</a>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Total Seats Needed</label>
-          <input type="number" id="totalSeats" required min="1" value="3">
-        </div>
-        <div class="form-group">
-          <label>Cost Per Seat (₹)</label>
-          <input type="number" id="costPerSeat" required value="150">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Your Name</label>
-          <input type="text" id="hostName" required placeholder="Your name">
-        </div>
-        <div class="form-group">
-          <label>Your Contact</label>
-          <input type="text" id="hostContact" required placeholder="+919876543210">
-        </div>
-      </div>
-      <button type="submit">Create Group</button>
-      <div class="error-text" id="createError"></div>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Join a Group with a Code</h2>
-    <div class="join-row">
-      <input type="text" id="joinCode" placeholder="Enter 6-character group code" maxlength="6" style="text-transform:uppercase;">
-      <input type="text" id="joinName" placeholder="Your name">
-      <input type="text" id="joinContact" placeholder="Your contact">
-      <button id="joinBtn">Join</button>
     </div>
-    <div class="error-text" id="joinError"></div>
-  </div>
 
-  <div class="card">
-    <h2>Active Groups</h2>
-    <div id="groupsList">Loading...</div>
+    <section>
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2>Start a ride request</h2>
+      </div>
+      <div class="panel">
+        <form id="createForm">
+          <div class="form-row">
+            <div class="field">
+              <label>Destination</label>
+              <input type="text" id="destination" required placeholder="Airport Terminal 1">
+            </div>
+            <div class="field">
+              <label>Departure</label>
+              <input type="datetime-local" id="departureTime" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Seats needed</label>
+              <input type="number" id="totalSeats" required min="1" value="3">
+            </div>
+            <div class="field">
+              <label>Cost per seat (₹)</label>
+              <input type="number" id="costPerSeat" required value="150">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Your name</label>
+              <input type="text" id="hostName" required placeholder="Full name">
+            </div>
+            <div class="field">
+              <label>Your contact</label>
+              <input type="text" id="hostContact" required placeholder="+91 98765 43210">
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Create request</button>
+          <div class="error-text" id="createError"></div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2>Join with a code</h2>
+      </div>
+      <div class="panel">
+        <div class="join-row">
+          <div class="field code-field" style="max-width:160px;">
+            <label>Group code</label>
+            <input type="text" id="joinCode" maxlength="6" placeholder="ABC123">
+          </div>
+          <div class="field" style="max-width:220px;">
+            <label>Your name</label>
+            <input type="text" id="joinName" placeholder="Full name">
+          </div>
+          <div class="field" style="max-width:220px;">
+            <label>Your contact</label>
+            <input type="text" id="joinContact" placeholder="+91 98765 43210">
+          </div>
+          <button id="joinBtn" class="btn-outline">Join group</button>
+        </div>
+        <div class="error-text" id="joinError"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2>Active requests</h2>
+      </div>
+      <div class="board" id="groupsList">
+        <div class="empty-state">Loading requests…</div>
+      </div>
+    </section>
+
+    <footer>Campus Carpool — coordination board for student ride sharing.</footer>
   </div>
 
   <script>
@@ -179,78 +204,74 @@
 
     function fmtTime(dateStr) {
       const d = new Date(dateStr);
-      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     function countdownText(deadline) {
       const ms = new Date(deadline).getTime() - Date.now();
-      if (ms <= 0) return 'Expired';
+      if (ms <= 0) return 'Window closed';
       const m = Math.floor(ms / 60000);
       const s = Math.floor((ms % 60000) / 1000);
-      return `${m}:${s.toString().padStart(2, '0')} left to fill seats`;
+      return `${m}:${s.toString().padStart(2, '0')} remaining to fill seats`;
     }
 
-    function statusBadge(status) {
+    function statusMeta(status) {
       const map = {
-        FORMING: ['badge-forming', 'Forming'],
-        PENDING_DRIVER: ['badge-pending', 'Driver requested'],
-        CONFIRMED: ['badge-confirmed', 'Confirmed'],
-        EXPIRED: ['badge-expired', 'Expired'],
-        CANCELLED: ['badge-cancelled', 'Cancelled']
+        FORMING:        ['dot-forming', 'status-forming', 'Forming'],
+        PENDING_DRIVER:  ['dot-pending', 'status-pending', 'Driver requested'],
+        CONFIRMED:       ['dot-confirmed', 'status-confirmed', 'Confirmed'],
+        EXPIRED:         ['dot-inactive', 'status-inactive', 'Expired'],
+        CANCELLED:       ['dot-inactive', 'status-inactive', 'Cancelled']
       };
-      const [cls, label] = map[status] || ['badge-forming', status];
-      return `<span class="badge ${cls}">${label}</span>`;
+      return map[status] || ['dot-inactive', 'status-inactive', status];
     }
 
     function renderGroups() {
       const container = document.getElementById('groupsList');
       if (cachedGroups.length === 0) {
-        container.innerHTML = '<p class="empty">No active ride groups right now. Start one above.</p>';
+        container.innerHTML = '<div class="empty-state">No active requests. Start one above and share the code with classmates.</div>';
         return;
       }
 
       container.innerHTML = cachedGroups.map(g => {
         const seatsFilled = g.members.length;
-        const itemClass = g.status === 'CONFIRMED' ? 'confirmed'
-          : g.status === 'PENDING_DRIVER' ? 'pending'
-          : (g.status === 'EXPIRED' || g.status === 'CANCELLED') ? 'expired' : '';
+        const [dotCls, textCls, label] = statusMeta(g.status);
 
         const membersList = g.members.map(m =>
-          `<li class="${m.isHost ? 'host' : ''}">${m.name} — ${m.contact}</li>`
+          `<li><span>${m.name}${m.isHost ? '<span class="host-flag">Host</span>' : ''}</span><span class="m-contact">${m.contact}</span></li>`
         ).join('');
 
         const driverBlock = g.status === 'CONFIRMED'
-          ? `<div class="driver-info">Driver: ${g.driverName} — ${g.driverContact}</div>`
+          ? `<div class="driver-block"><strong>Driver confirmed —</strong> ${g.driverName}, ${g.driverContact}</div>`
           : '';
 
-        const showCountdown = g.status === 'FORMING';
-        const countdownBlock = showCountdown
+        const countdownBlock = g.status === 'FORMING'
           ? `<div class="countdown" data-deadline="${g.formingDeadline}">${countdownText(g.formingDeadline)}</div>`
           : '';
 
         const canAct = ['FORMING', 'PENDING_DRIVER', 'CONFIRMED'].includes(g.status);
         const actions = canAct ? `
-          <div class="actions">
-            <button class="btn-secondary" onclick="leaveGroup('${g._id}')">Leave Group</button>
-            <button class="btn-danger" onclick="cancelGroup('${g._id}')">Cancel Ride (Host Only)</button>
+          <div class="row-actions">
+            <button class="btn-danger-text" onclick="leaveGroup('${g._id}')">Leave group</button>
+            <button class="btn-danger-text" onclick="cancelGroup('${g._id}')">Cancel ride (host only)</button>
           </div>` : '';
 
         return `
-          <div class="group-item ${itemClass}" data-id="${g._id}">
-            <div class="group-top">
+          <div class="row" data-id="${g._id}">
+            <div class="row-top">
               <div>
-                <div class="route">${g.origin} → ${g.destination}</div>
-                <div class="meta">${fmtTime(g.departureTime)} · ${seatsFilled}/${g.totalSeats} seats · ₹${g.costPerSeat}/seat</div>
+                <div class="route">${g.origin}<span class="arrow">→</span>${g.destination}</div>
+                <div class="meta-line">${fmtTime(g.departureTime)} · ${seatsFilled}/${g.totalSeats} seats · ₹${g.costPerSeat} per seat</div>
+                <div class="code-tag">Code ${g.groupCode}</div>
               </div>
-              <div style="text-align:right;">
-                ${statusBadge(g.status)}
-                <div class="code">${g.groupCode}</div>
+              <div class="status-block">
+                <span class="status ${textCls}"><span class="dot ${dotCls}"></span>${label}</span>
               </div>
             </div>
             ${countdownBlock}
-            <div class="members">
-              <strong>Group members:</strong>
-              <ul>${membersList}</ul>
+            <div class="members-block">
+              <div class="members-label">Group members</div>
+              <ul class="member-list">${membersList}</ul>
             </div>
             ${driverBlock}
             ${actions}
@@ -266,18 +287,16 @@
         cachedGroups = await res.json();
         renderGroups();
       } catch (err) {
-        document.getElementById('groupsList').innerHTML = `<p class="error-text">Error connecting to backend: ${err.message}</p>`;
+        document.getElementById('groupsList').innerHTML = `<div class="empty-state error-text">Could not reach the server. ${err.message}</div>`;
       }
     }
 
-    // Live-update countdowns every second without refetching
     setInterval(() => {
       document.querySelectorAll('.countdown').forEach(el => {
         el.textContent = countdownText(el.dataset.deadline);
       });
     }, 1000);
 
-    // Refetch groups every 15s to pick up status changes (driver accepted, expired, etc.)
     setInterval(loadGroups, 15000);
 
     document.getElementById('createForm').addEventListener('submit', async (e) => {
@@ -301,9 +320,9 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Error creating group'; return; }
+        if (!res.ok) { errorEl.textContent = data.error || 'Could not create the request.'; return; }
 
-        alert(`Group created! Share this code with friends: ${data.group.groupCode}`);
+        alert(`Request created. Share this code with classmates: ${data.group.groupCode}`);
         document.getElementById('createForm').reset();
         loadGroups();
       } catch (err) {
@@ -320,14 +339,14 @@
       const contact = document.getElementById('joinContact').value.trim();
 
       if (!code || !name || !contact) {
-        errorEl.textContent = 'Fill in code, name, and contact to join.';
+        errorEl.textContent = 'Enter the code, your name, and your contact to join.';
         return;
       }
 
       try {
         const lookupRes = await fetch(`${API_URL}/groups/code/${code}`);
         const lookupData = await lookupRes.json();
-        if (!lookupRes.ok) { errorEl.textContent = lookupData.error || 'Group not found'; return; }
+        if (!lookupRes.ok) { errorEl.textContent = lookupData.error || 'Group not found.'; return; }
 
         const joinRes = await fetch(`${API_URL}/groups/${lookupData._id}/join`, {
           method: 'POST',
@@ -335,7 +354,7 @@
           body: JSON.stringify({ name, contact })
         });
         const joinData = await joinRes.json();
-        if (!joinRes.ok) { errorEl.textContent = joinData.error || 'Error joining group'; return; }
+        if (!joinRes.ok) { errorEl.textContent = joinData.error || 'Could not join the group.'; return; }
 
         document.getElementById('joinCode').value = '';
         document.getElementById('joinName').value = '';
@@ -357,7 +376,7 @@
           body: JSON.stringify({ contact })
         });
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'Error leaving group'); return; }
+        if (!res.ok) { alert(data.error || 'Could not leave the group.'); return; }
         loadGroups();
       } catch (err) {
         alert('Network error: ' + err.message);
@@ -365,9 +384,9 @@
     }
 
     async function cancelGroup(groupId) {
-      const hostContact = prompt('Enter the HOST contact number to cancel this ride:');
+      const hostContact = prompt('Enter the host contact number to cancel this ride:');
       if (!hostContact) return;
-      if (!confirm('This will cancel the ride for the entire group. Continue?')) return;
+      if (!confirm('This cancels the ride for the entire group. Continue?')) return;
 
       try {
         const res = await fetch(`${API_URL}/groups/${groupId}/cancel`, {
@@ -376,7 +395,7 @@
           body: JSON.stringify({ hostContact })
         });
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'Error cancelling group'); return; }
+        if (!res.ok) { alert(data.error || 'Could not cancel the ride.'); return; }
         loadGroups();
       } catch (err) {
         alert('Network error: ' + err.message);

@@ -3,119 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campus Carpool Hub — Drivers</title>
+  <title>Campus Carpool — Driver Portal</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
     :root {
-      --bg: #12172B;
-      --card: #1B2140;
-      --card-border: #2A3158;
-      --text: #F2F0EA;
-      --muted: #9098B8;
-      --amber: #E8A33D;
-      --teal: #3E9C8F;
-      --coral: #E85C4A;
+      --paper: #FAFAF7;
+      --panel: #FFFFFF;
+      --ink: #1C1C1E;
+      --ink-soft: #55555C;
+      --line: #E1DFD8;
+      --indigo: #2B3A67;
+      --indigo-soft: #EEF0F6;
+      --sage: #5F7F63;
+      --sage-soft: #EBF1EC;
+      --brick: #A6402F;
     }
     * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 24px 20px 60px;
-      background: var(--bg);
-      color: var(--text);
-    }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-    h1 { font-size: 22px; margin: 0; }
-    .student-link { color: var(--amber); text-decoration: none; border: 1px solid var(--amber); padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; }
-    .student-link:hover { background: rgba(232,163,61,0.1); }
-    h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin: 0 0 14px; }
-    .card { background: var(--card); border: 1px solid var(--card-border); padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-    .form-group { margin-bottom: 12px; }
-    label { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
-    input {
-      width: 100%; padding: 9px 10px; border: 1px solid var(--card-border);
-      border-radius: 6px; background: #0F1428; color: var(--text); font-size: 14px;
-    }
-    input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
-    button { background: var(--amber); color: #1a1400; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
-    button:hover { filter: brightness(1.08); }
-    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tab { padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
-    .tab.active { background: rgba(232,163,61,0.15); color: var(--amber); }
-    .error-text { color: var(--coral); font-size: 13px; margin-top: 6px; }
-    .welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .welcome span { color: var(--muted); font-size: 14px; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--paper); color: var(--ink); margin: 0; padding: 0 0 80px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 
-    .group-item { border-left: 4px solid var(--teal); padding: 14px 16px; margin-bottom: 12px; background: #142C29; border-radius: 0 8px 8px 0; }
-    .route { font-weight: 700; font-size: 16px; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-    .members { margin-top: 10px; font-size: 13px; }
-    .members ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
-    .empty { color: var(--muted); font-size: 14px; }
-    .actions { margin-top: 12px; }
+    .masthead { border-bottom: 1px solid var(--line); padding: 36px 0 20px; margin-bottom: 36px; }
+    .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
+    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+    h1 { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 32px; margin: 0; letter-spacing: -0.2px; }
+    .student-link { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--indigo); text-decoration: none; border-bottom: 1px solid var(--indigo); padding-bottom: 2px; white-space: nowrap; }
+    .student-link:hover { color: var(--ink); border-color: var(--ink); }
+
+    .section-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 16px; }
+    h2 { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 19px; margin: 0; }
+
+    .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .tab { padding: 10px 4px; margin-right: 22px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); border-bottom: 2px solid transparent; }
+    .tab.active { color: var(--indigo); border-bottom-color: var(--indigo); }
+
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 24px 26px; margin-bottom: 40px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 500; }
+    .field input { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 14px; }
+    .field input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(43,58,103,0.1); }
+
+    button { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 2px; padding: 11px 20px; cursor: pointer; }
+    .btn-primary { background: var(--indigo); color: #fff; }
+    .btn-primary:hover { background: #223057; }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+    .btn-outline:hover { border-color: var(--ink); }
+
+    .error-text { color: var(--brick); font-size: 13px; margin-top: 10px; }
+
+    .welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .welcome span { color: var(--ink-soft); font-size: 14px; }
+    .welcome strong { color: var(--ink); }
+
+    .board { border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--panel); }
+    .row { padding: 18px 22px; border-bottom: 1px solid var(--line); }
+    .row:last-child { border-bottom: none; }
+    .route { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 17px; }
+    .route .arrow { color: var(--ink-soft); font-weight: 400; margin: 0 6px; }
+    .meta-line { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+
+    .members-block { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+    .members-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 600; }
+    .member-list { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+    .member-list li { padding: 2px 0; display: flex; justify-content: space-between; max-width: 420px; }
+    .member-list li .m-contact { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+    .row-actions { margin-top: 14px; }
+    .empty-state { padding: 40px 22px; text-align: center; color: var(--ink-soft); font-size: 14px; }
+
     #driverSection { display: none; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🚘 Driver Portal</h1>
-    <a class="student-link" href="index.html">← Back to student view</a>
-  </header>
-
-  <div id="authSection">
-    <div class="tabs">
-      <div class="tab active" id="loginTab" onclick="showTab('login')">Log In</div>
-      <div class="tab" id="signupTab" onclick="showTab('signup')">Sign Up</div>
+  <div class="wrap">
+    <div class="masthead">
+      <div class="masthead-row">
+        <div>
+          <p class="eyebrow">Campus Transport Coordination</p>
+          <h1>Driver Portal</h1>
+        </div>
+        <a class="student-link" href="index.html">← Ride board</a>
+      </div>
     </div>
 
-    <div class="card" id="loginCard">
-      <h2>Driver Log In</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="text" id="loginPhone" required placeholder="+919876543210">
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="loginPassword" required>
-        </div>
-        <button type="submit">Log In</button>
-        <div class="error-text" id="loginError"></div>
-      </form>
+    <div id="authSection">
+      <div class="tabs">
+        <div class="tab active" id="loginTab" onclick="showTab('login')">Sign in</div>
+        <div class="tab" id="signupTab" onclick="showTab('signup')">Register</div>
+      </div>
+
+      <div class="panel" id="loginCard">
+        <form id="loginForm">
+          <div class="field">
+            <label>Phone number</label>
+            <input type="text" id="loginPhone" required placeholder="+91 98765 43210">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="loginPassword" required>
+          </div>
+          <button type="submit" class="btn-primary">Sign in</button>
+          <div class="error-text" id="loginError"></div>
+        </form>
+      </div>
+
+      <div class="panel" id="signupCard" style="display:none;">
+        <form id="signupForm">
+          <div class="field">
+            <label>Full name</label>
+            <input type="text" id="signupName" required>
+          </div>
+          <div class="field">
+            <label>Phone number</label>
+            <input type="text" id="signupPhone" required placeholder="+91 98765 43210">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="signupPassword" required minlength="6">
+          </div>
+          <button type="submit" class="btn-primary">Register</button>
+          <div class="error-text" id="signupError"></div>
+        </form>
+      </div>
     </div>
 
-    <div class="card" id="signupCard" style="display:none;">
-      <h2>Driver Sign Up</h2>
-      <form id="signupForm">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" id="signupName" required>
-        </div>
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="text" id="signupPhone" required placeholder="+919876543210">
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="signupPassword" required minlength="6">
-        </div>
-        <button type="submit">Create Account</button>
-        <div class="error-text" id="signupError"></div>
-      </form>
-    </div>
-  </div>
+    <div id="driverSection">
+      <div class="welcome">
+        <span>Signed in as <strong id="driverNameLabel"></strong></span>
+        <button class="btn-outline" onclick="logout()">Sign out</button>
+      </div>
 
-  <div id="driverSection">
-    <div class="welcome">
-      <span>Logged in as <strong id="driverNameLabel"></strong></span>
-      <button class="btn-secondary" onclick="logout()">Log Out</button>
-    </div>
-
-    <div class="card">
-      <h2>Ride Requests Waiting for a Driver</h2>
-      <div id="pendingList">Loading...</div>
+      <div class="section-head">
+        <h2>Requests awaiting a driver</h2>
+      </div>
+      <div class="board" id="pendingList">
+        <div class="empty-state">Loading requests…</div>
+      </div>
     </div>
   </div>
 
@@ -166,7 +190,7 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Signup failed'; return; }
+        if (!res.ok) { errorEl.textContent = data.error || 'Registration failed.'; return; }
 
         driver = data.driver;
         localStorage.setItem('carpool_driver', JSON.stringify(driver));
@@ -193,7 +217,7 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Login failed'; return; }
+        if (!res.ok) { errorEl.textContent = data.error || 'Sign-in failed.'; return; }
 
         driver = data.driver;
         localStorage.setItem('carpool_driver', JSON.stringify(driver));
@@ -205,7 +229,7 @@
 
     function fmtTime(dateStr) {
       const d = new Date(dateStr);
-      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     async function loadPending() {
@@ -216,28 +240,30 @@
         const groups = await res.json();
 
         if (groups.length === 0) {
-          container.innerHTML = '<p class="empty">No ride requests waiting right now.</p>';
+          container.innerHTML = '<div class="empty-state">No requests waiting right now.</div>';
           return;
         }
 
         container.innerHTML = groups.map(g => {
-          const membersList = g.members.map(m => `<li>${m.name} — ${m.contact}</li>`).join('');
+          const membersList = g.members.map(m =>
+            `<li><span>${m.name}</span><span class="m-contact">${m.contact}</span></li>`
+          ).join('');
           return `
-            <div class="group-item">
-              <div class="route">${g.origin} → ${g.destination}</div>
-              <div class="meta">${fmtTime(g.departureTime)} · ${g.members.length}/${g.totalSeats} seats filled · ₹${g.costPerSeat}/seat</div>
-              <div class="members">
-                <strong>Passengers:</strong>
-                <ul>${membersList}</ul>
+            <div class="row">
+              <div class="route">${g.origin}<span class="arrow">→</span>${g.destination}</div>
+              <div class="meta-line">${fmtTime(g.departureTime)} · ${g.members.length}/${g.totalSeats} seats filled · ₹${g.costPerSeat} per seat</div>
+              <div class="members-block">
+                <div class="members-label">Passengers</div>
+                <ul class="member-list">${membersList}</ul>
               </div>
-              <div class="actions">
-                <button onclick="acceptGroup('${g._id}')">Accept This Ride</button>
+              <div class="row-actions">
+                <button class="btn-primary" onclick="acceptGroup('${g._id}')">Accept ride</button>
               </div>
             </div>
           `;
         }).join('');
       } catch (err) {
-        container.innerHTML = `<p class="error-text">Error loading requests: ${err.message}</p>`;
+        container.innerHTML = `<div class="empty-state error-text">Could not load requests. ${err.message}</div>`;
       }
     }
 
@@ -251,9 +277,9 @@
           body: JSON.stringify({ driverId: driver.id })
         });
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'Error accepting ride'); return; }
+        if (!res.ok) { alert(data.error || 'Could not accept the ride.'); return; }
 
-        alert('Ride confirmed! Passenger contacts are visible on the student page.');
+        alert('Ride confirmed. Passenger contacts are visible on the ride board.');
         loadPending();
       } catch (err) {
         alert('Network error: ' + err.message);
