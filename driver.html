@@ -144,8 +144,27 @@
   </div>
 
   <script>
-    const API_URL = 'https://vit-carpooling-deployment.onrender.com/api';
-    let driver = JSON.parse(localStorage.getItem('carpool_driver') || 'null');
+    const API_URL = 'http://localhost:5001/api';
+
+    // ---------- AUTH STATE ----------
+    // We now store the driver's profile AND their JWT together, since the
+    // profile alone isn't proof of anything — the token is what the server
+    // actually trusts on protected routes.
+    const AUTH_KEY = 'carpool_driver_auth';
+
+    function getAuth() {
+      return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+    }
+
+    function setAuth(driver, token) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({ driver, token }));
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(AUTH_KEY);
+    }
+
+    let auth = getAuth();
 
     function showTab(tab) {
       document.getElementById('loginTab').classList.toggle('active', tab === 'login');
@@ -155,10 +174,10 @@
     }
 
     function renderAuthState() {
-      if (driver) {
+      if (auth) {
         document.getElementById('authSection').style.display = 'none';
         document.getElementById('driverSection').style.display = 'block';
-        document.getElementById('driverNameLabel').textContent = driver.name;
+        document.getElementById('driverNameLabel').textContent = auth.driver.name;
         loadPending();
       } else {
         document.getElementById('authSection').style.display = 'block';
@@ -167,8 +186,8 @@
     }
 
     function logout() {
-      driver = null;
-      localStorage.removeItem('carpool_driver');
+      auth = null;
+      clearAuth();
       renderAuthState();
     }
 
@@ -192,9 +211,10 @@
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Registration failed.'; return; }
 
-        driver = data.driver;
-        localStorage.setItem('carpool_driver', JSON.stringify(driver));
-        renderAuthState();
+        // Signup doesn't issue a token — send them to sign in right after.
+        showTab('login');
+        document.getElementById('signupForm').reset();
+        document.getElementById('loginPhone').value = payload.phone;
       } catch (err) {
         errorEl.textContent = 'Network error: ' + err.message;
       }
@@ -219,8 +239,8 @@
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Sign-in failed.'; return; }
 
-        driver = data.driver;
-        localStorage.setItem('carpool_driver', JSON.stringify(driver));
+        auth = { driver: data.driver, token: data.token };
+        setAuth(data.driver, data.token);
         renderAuthState();
       } catch (err) {
         errorEl.textContent = 'Network error: ' + err.message;
@@ -270,12 +290,31 @@
     async function acceptGroup(groupId) {
       if (!confirm('Accept this ride request?')) return;
 
+      if (!auth || !auth.token) {
+        alert('You need to sign in again.');
+        logout();
+        return;
+      }
+
       try {
-        const res = await fetch(`${API_URL}/groups/${groupId}/accept`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ driverId: driver.id })
+        const res = await fetch(`${API_URL}/groups/${groupId}/driver/accept`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.token}`
+          },
+          body: JSON.stringify({})
         });
+
+        // If the token is missing/expired/invalid, the server responds 401.
+        // Treat that as "session expired" and bounce back to the login screen
+        // rather than showing a confusing generic error.
+        if (res.status === 401) {
+          alert('Your session has expired. Please sign in again.');
+          logout();
+          return;
+        }
+
         const data = await res.json();
         if (!res.ok) { alert(data.error || 'Could not accept the ride.'); return; }
 
@@ -286,7 +325,7 @@
       }
     }
 
-    setInterval(() => { if (driver) loadPending(); }, 15000);
+    setInterval(() => { if (auth) loadPending(); }, 15000);
 
     renderAuthState();
   </script>

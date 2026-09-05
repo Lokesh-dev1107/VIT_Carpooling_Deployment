@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(express.json());
@@ -34,7 +35,8 @@ const memberSchema = new mongoose.Schema({
   name: { type: String, required: true },
   contact: { type: String, required: true },
   isHost: { type: Boolean, default: false },
-  joinedAt: { type: Date, default: Date.now }
+  joinedAt: { type: Date, default: Date.now },
+  memberToken: { type: String, default: () => crypto.randomBytes(16).toString('hex') }
 }, { _id: true });
 
 const rideGroupSchema = new mongoose.Schema({
@@ -71,6 +73,9 @@ function generateGroupCode() {
   // 6-char alphanumeric, easy to read/share
   return crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
 }
+function findMemberByToken(group, memberToken) {
+  return group.members.find(m => m.memberToken === memberToken);
+}
 
 // Re-check time-based state transitions whenever a group is touched.
 // Keeps status correct without needing a background cron job.
@@ -104,7 +109,22 @@ function isFull(group) {
 
 function toPublicGroup(group) {
   const obj = group.toObject();
+  obj.members = obj.members.map(({ memberToken, ...rest }) => rest); // strip tokens from board view
   return obj;
+}
+
+function requireDriver(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    req.driverAuth = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 }
 
 // ---------- STUDENT ROUTES ----------
@@ -144,13 +164,17 @@ app.post('/api/groups', async (req, res) => {
       status: 'FORMING'
     });
 
-    // A group of size 1 filled immediately (rare, but handle it)
     if (isFull(group)) {
       group.status = 'PENDING_DRIVER';
       await group.save();
     }
 
-    res.status(201).json({ message: 'Ride group created!', group: toPublicGroup(group) });
+    const hostMember = group.members[0];
+    res.status(201).json({
+      message: 'Ride group created!',
+      group: toPublicGroup(group),
+      memberToken: hostMember.memberToken   // ← give the host their own secret
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -203,9 +227,6 @@ app.post('/api/groups/:id/join', async (req, res) => {
       return res.status(400).json({ error: 'Group is already full' });
     }
 
-    const alreadyIn = group.members.some(m => m.contact === contact);
-    if (alreadyIn) return res.status(400).json({ error: 'You have already joined this group' });
-
     group.members.push({ name, contact, isHost: false });
 
     if (isFull(group)) {
@@ -213,17 +234,23 @@ app.post('/api/groups/:id/join', async (req, res) => {
     }
 
     await group.save();
-    res.json({ message: 'Joined group!', group: toPublicGroup(group) });
+
+    const newMember = group.members[group.members.length - 1];
+    res.json({
+      message: 'Joined group!',
+      group: toPublicGroup(group),
+      memberToken: newMember.memberToken   // ← give the joiner their own secret
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
 // UPDATE: a member leaves the group (must be >2hrs before departure)
-app.post('/api/groups/:id/leave', async (req, res) => {
+app.delete('/api/groups/:id/members/me', async (req, res) => {
   try {
-    const { contact } = req.body;
-    if (!contact) return res.status(400).json({ error: 'Contact is required to identify member' });
+    const { memberToken } = req.body;
+    if (!memberToken) return res.status(400).json({ error: 'memberToken is required' });
 
     const group = await RideGroup.findById(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
@@ -239,15 +266,14 @@ app.post('/api/groups/:id/leave', async (req, res) => {
       return res.status(400).json({ error: 'Too late to leave — must be more than 2 hours before departure' });
     }
 
-    const member = group.members.find(m => m.contact === contact);
-    if (!member) return res.status(404).json({ error: 'You are not a member of this group' });
+    const member = findMemberByToken(group, memberToken);
+    if (!member) return res.status(404).json({ error: 'Invalid member token' });
     if (member.isHost) {
       return res.status(400).json({ error: 'Host cannot leave — use cancel group instead' });
     }
 
-    group.members = group.members.filter(m => m.contact !== contact);
+    group.members = group.members.filter(m => m.memberToken !== memberToken);
 
-    // Reopen the group if it had filled and is now short a seat
     if (group.status === 'PENDING_DRIVER' && !isFull(group)) {
       group.status = 'FORMING';
       group.driverId = null;
@@ -267,18 +293,17 @@ app.post('/api/groups/:id/leave', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
-
 // UPDATE: host cancels the entire group (until 10 min before departure)
-app.post('/api/groups/:id/cancel', async (req, res) => {
+app.delete('/api/groups/:id/cancel', async (req, res) => {
   try {
-    const { hostContact } = req.body;
-    if (!hostContact) return res.status(400).json({ error: 'Host contact is required' });
+    const { memberToken } = req.body;
+    if (!memberToken) return res.status(400).json({ error: 'memberToken is required' });
 
     const group = await RideGroup.findById(req.params.id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
     const host = group.members.find(m => m.isHost);
-    if (!host || host.contact !== hostContact) {
+    if (!host || host.memberToken !== memberToken) {
       return res.status(403).json({ error: 'Only the group host can cancel this ride' });
     }
 
@@ -327,8 +352,13 @@ app.post('/api/drivers/login', async (req, res) => {
     const valid = await bcrypt.compare(password, driver.passwordHash);
     if (!valid) return res.status(401).json({ error: 'Invalid phone or password' });
 
-    // Simple session token (not JWT) — fine for a course project, not production auth
-    res.json({ message: 'Login successful', driver: { id: driver._id, name: driver.name, phone: driver.phone } });
+    const token = jwt.sign(
+      { driverId: driver._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ message: 'Login successful', token, driver: { id: driver._id, name: driver.name, phone: driver.phone } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -347,10 +377,9 @@ app.get('/api/driver/groups', async (req, res) => {
 });
 
 // UPDATE: driver accepts a group
-app.post('/api/groups/:id/accept', async (req, res) => {
+app.patch('/api/groups/:id/driver/accept', requireDriver, async (req, res) => {
   try {
-    const { driverId } = req.body;
-    if (!driverId) return res.status(400).json({ error: 'driverId is required' });
+    const driverId = req.driverAuth.driverId;
 
     const driver = await Driver.findById(driverId);
     if (!driver) return res.status(404).json({ error: 'Driver not found' });

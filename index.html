@@ -94,6 +94,7 @@
     .member-list li { padding: 2px 0; display: flex; justify-content: space-between; max-width: 420px; }
     .member-list li .m-contact { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
     .host-flag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--indigo); border: 1px solid var(--indigo-soft); background: var(--indigo-soft); padding: 1px 6px; border-radius: 2px; margin-left: 8px; }
+    .you-flag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--sage); border: 1px solid #D6E4D8; background: var(--sage-soft); padding: 1px 6px; border-radius: 2px; margin-left: 8px; }
 
     .driver-block { margin-top: 12px; background: var(--sage-soft); border: 1px solid #D6E4D8; padding: 10px 14px; border-radius: 2px; font-size: 13px; }
     .driver-block strong { color: var(--sage); }
@@ -199,8 +200,34 @@
   </div>
 
   <script>
-    const API_URL = 'https://vit-carpooling-deployment.onrender.com/api';
+    const API_URL = 'http://localhost:5001/api';
     let cachedGroups = [];
+
+    // ---------- MEMBER TOKEN STORAGE ----------
+    // Each group a student creates or joins gives back a private memberToken.
+    // We store these keyed by groupId, so one browser can hold multiple
+    // memberships (e.g. host of one ride, joiner of another) at once.
+    const TOKENS_KEY = 'carpool_member_tokens';
+
+    function getStoredTokens() {
+      return JSON.parse(localStorage.getItem(TOKENS_KEY) || '{}');
+    }
+
+    function saveMemberToken(groupId, token) {
+      const tokens = getStoredTokens();
+      tokens[groupId] = token;
+      localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+    }
+
+    function getMemberToken(groupId) {
+      return getStoredTokens()[groupId] || null;
+    }
+
+    function removeMemberToken(groupId) {
+      const tokens = getStoredTokens();
+      delete tokens[groupId];
+      localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+    }
 
     function fmtTime(dateStr) {
       const d = new Date(dateStr);
@@ -237,6 +264,9 @@
         const seatsFilled = g.members.length;
         const [dotCls, textCls, label] = statusMeta(g.status);
 
+        const myToken = getMemberToken(g._id);
+        const amMember = !!myToken;
+
         const membersList = g.members.map(m =>
           `<li><span>${m.name}${m.isHost ? '<span class="host-flag">Host</span>' : ''}</span><span class="m-contact">${m.contact}</span></li>`
         ).join('');
@@ -249,8 +279,12 @@
           ? `<div class="countdown" data-deadline="${g.formingDeadline}">${countdownText(g.formingDeadline)}</div>`
           : '';
 
+        // Only show action buttons if this browser actually holds a
+        // membership token for this specific group. The server is still
+        // the real gatekeeper (it validates the token on every request);
+        // this just avoids showing buttons that would obviously fail.
         const canAct = ['FORMING', 'PENDING_DRIVER', 'CONFIRMED'].includes(g.status);
-        const actions = canAct ? `
+        const actions = (canAct && amMember) ? `
           <div class="row-actions">
             <button class="btn-danger-text" onclick="leaveGroup('${g._id}')">Leave group</button>
             <button class="btn-danger-text" onclick="cancelGroup('${g._id}')">Cancel ride (host only)</button>
@@ -262,7 +296,7 @@
               <div>
                 <div class="route">${g.origin}<span class="arrow">→</span>${g.destination}</div>
                 <div class="meta-line">${fmtTime(g.departureTime)} · ${seatsFilled}/${g.totalSeats} seats · ₹${g.costPerSeat} per seat</div>
-                <div class="code-tag">Code ${g.groupCode}</div>
+                <div class="code-tag">Code ${g.groupCode}${amMember ? '<span class="you-flag">You\'re in</span>' : ''}</div>
               </div>
               <div class="status-block">
                 <span class="status ${textCls}"><span class="dot ${dotCls}"></span>${label}</span>
@@ -322,6 +356,8 @@
         const data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Could not create the request.'; return; }
 
+        saveMemberToken(data.group._id, data.memberToken);
+
         alert(`Request created. Share this code with classmates: ${data.group.groupCode}`);
         document.getElementById('createForm').reset();
         loadGroups();
@@ -356,6 +392,8 @@
         const joinData = await joinRes.json();
         if (!joinRes.ok) { errorEl.textContent = joinData.error || 'Could not join the group.'; return; }
 
+        saveMemberToken(lookupData._id, joinData.memberToken);
+
         document.getElementById('joinCode').value = '';
         document.getElementById('joinName').value = '';
         document.getElementById('joinContact').value = '';
@@ -366,17 +404,22 @@
     });
 
     async function leaveGroup(groupId) {
-      const contact = prompt('Enter the contact number you joined with:');
-      if (!contact) return;
+      const memberToken = getMemberToken(groupId);
+      if (!memberToken) {
+        alert('No membership found for this ride in this browser.');
+        return;
+      }
+      if (!confirm('Leave this ride group?')) return;
 
       try {
-        const res = await fetch(`${API_URL}/groups/${groupId}/leave`, {
-          method: 'POST',
+        const res = await fetch(`${API_URL}/groups/${groupId}/members/me`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contact })
+          body: JSON.stringify({ memberToken })
         });
         const data = await res.json();
         if (!res.ok) { alert(data.error || 'Could not leave the group.'); return; }
+        removeMemberToken(groupId);
         loadGroups();
       } catch (err) {
         alert('Network error: ' + err.message);
@@ -384,18 +427,22 @@
     }
 
     async function cancelGroup(groupId) {
-      const hostContact = prompt('Enter the host contact number to cancel this ride:');
-      if (!hostContact) return;
+      const memberToken = getMemberToken(groupId);
+      if (!memberToken) {
+        alert('No host membership found for this ride in this browser.');
+        return;
+      }
       if (!confirm('This cancels the ride for the entire group. Continue?')) return;
 
       try {
         const res = await fetch(`${API_URL}/groups/${groupId}/cancel`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hostContact })
+          body: JSON.stringify({ memberToken })
         });
         const data = await res.json();
         if (!res.ok) { alert(data.error || 'Could not cancel the ride.'); return; }
+        removeMemberToken(groupId);
         loadGroups();
       } catch (err) {
         alert('Network error: ' + err.message);
