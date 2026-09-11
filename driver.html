@@ -3,79 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campus Carpool — Driver Portal</title>
+  <title>Campus Carpool &#x2014; Driver Portal</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
     :root {
-      --paper: #FAFAF7;
-      --panel: #FFFFFF;
-      --ink: #1C1C1E;
-      --ink-soft: #55555C;
-      --line: #E1DFD8;
-      --indigo: #2B3A67;
-      --indigo-soft: #EEF0F6;
-      --sage: #5F7F63;
-      --sage-soft: #EBF1EC;
-      --brick: #A6402F;
+      --paper:#FAFAF7;--panel:#FFFFFF;--ink:#1C1C1E;--ink-soft:#55555C;--line:#E1DFD8;
+      --indigo:#2B3A67;--indigo-soft:#EEF0F6;--sage:#5F7F63;--sage-soft:#EBF1EC;--brick:#A6402F;
     }
-    * { box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--paper); color: var(--ink); margin: 0; padding: 0 0 80px; }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
-
-    .masthead { border-bottom: 1px solid var(--line); padding: 36px 0 20px; margin-bottom: 36px; }
-    .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; }
-    .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
-    h1 { font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 32px; margin: 0; letter-spacing: -0.2px; }
-    .student-link { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--indigo); text-decoration: none; border-bottom: 1px solid var(--indigo); padding-bottom: 2px; white-space: nowrap; }
-    .student-link:hover { color: var(--ink); border-color: var(--ink); }
-
-    .section-head { display: flex; align-items: baseline; gap: 10px; margin: 0 0 16px; }
-    h2 { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 19px; margin: 0; }
-
-    .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
-    .tab { padding: 10px 4px; margin-right: 22px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); border-bottom: 2px solid transparent; }
-    .tab.active { color: var(--indigo); border-bottom-color: var(--indigo); }
-
-    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 24px 26px; margin-bottom: 40px; }
-    .field { margin-bottom: 16px; }
-    .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 500; }
-    .field input { width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 14px; }
-    .field input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(43,58,103,0.1); }
-
-    button { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px; border: none; border-radius: 2px; padding: 11px 20px; cursor: pointer; }
-    .btn-primary { background: var(--indigo); color: #fff; }
-    .btn-primary:hover { background: #223057; }
-    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
-    .btn-outline:hover { border-color: var(--ink); }
-
-    .error-text { color: var(--brick); font-size: 13px; margin-top: 10px; }
-
-    .welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .welcome span { color: var(--ink-soft); font-size: 14px; }
-    .welcome strong { color: var(--ink); }
-
-    .board { border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--panel); }
-    .row { padding: 18px 22px; border-bottom: 1px solid var(--line); }
-    .row:last-child { border-bottom: none; }
-    .route { font-family: 'Source Serif 4', serif; font-weight: 600; font-size: 17px; }
-    .route .arrow { color: var(--ink-soft); font-weight: 400; margin: 0 6px; }
-    .meta-line { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
-
-    .members-block { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
-    .members-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin-bottom: 6px; font-weight: 600; }
-    .member-list { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
-    .member-list li { padding: 2px 0; display: flex; justify-content: space-between; max-width: 420px; }
-    .member-list li .m-contact { color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
-
-    .row-actions { margin-top: 14px; }
-    .empty-state { padding: 40px 22px; text-align: center; color: var(--ink-soft); font-size: 14px; }
-
-    #driverSection { display: none; }
+    *{box-sizing:border-box;}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);margin:0;padding:0 0 80px;}
+    .wrap{max-width:720px;margin:0 auto;padding:0 24px;}
+    .masthead{border-bottom:1px solid var(--line);padding:36px 0 20px;margin-bottom:36px;}
+    .masthead-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;}
+    .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px;}
+    h1{font-family:'Source Serif 4',serif;font-weight:700;font-size:32px;margin:0;letter-spacing:-0.2px;}
+    .student-link{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--indigo);text-decoration:none;border-bottom:1px solid var(--indigo);padding-bottom:2px;white-space:nowrap;}
+    .student-link:hover{color:var(--ink);border-color:var(--ink);}
+    h2{font-family:'Source Serif 4',serif;font-weight:600;font-size:19px;margin:0;}
+    .tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line);}
+    .tab{padding:10px 4px;margin-right:22px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink-soft);border-bottom:2px solid transparent;}
+    .tab.active{color:var(--indigo);border-bottom-color:var(--indigo);}
+    .dashboard-tabs{display:flex;gap:8px;margin-bottom:16px;}
+    .d-tab{font-family:'IBM Plex Mono',monospace;padding:6px 12px;cursor:pointer;font-size:11.5px;text-transform:uppercase;font-weight:600;color:var(--ink-soft);border:1px solid transparent;border-radius:2px;}
+    .d-tab.active{background:var(--panel);color:var(--ink);border-color:var(--line);}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:24px 26px;margin-bottom:40px;}
+    .field{margin-bottom:16px;}
+    .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
+    .field input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;}
+    .field input:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(43,58,103,0.1);}
+    button{font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:2px;padding:11px 20px;cursor:pointer;}
+    .btn-primary{background:var(--indigo);color:#fff;}.btn-primary:hover{background:#223057;}
+    .btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink);}.btn-outline:hover{border-color:var(--ink);}
+    .error-text{color:var(--brick);font-size:13px;margin-top:10px;}
+    .welcome-panel{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:20px 24px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+    .welcome-left{display:flex;flex-direction:column;gap:6px;}
+    .welcome-left span{color:var(--ink-soft);font-size:14px;}
+    .driver-stats-grid{display:flex;gap:32px;border-left:1px dashed var(--line);padding-left:32px;}
+    .d-stat-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px;}
+    .d-stat-val{font-family:'Source Serif 4',serif;font-size:20px;font-weight:600;color:var(--ink);line-height:1;}
+    .board{border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--panel);}
+    .row{padding:18px 22px;border-bottom:1px solid var(--line);}
+    .row:last-child{border-bottom:none;}
+    .route-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+    .route{font-family:'Source Serif 4',serif;font-weight:600;font-size:17px;}
+    .route .arrow{color:var(--ink-soft);font-weight:400;margin:0 6px;}
+    .payout-pill{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--sage);border:1px solid var(--sage-soft);background:var(--sage-soft);padding:4px 10px;border-radius:2px;white-space:nowrap;}
+    .meta-line{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin-top:5px;}
+    .members-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+    .members-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+    .member-list{list-style:none;margin:0;padding:0;font-size:13.5px;}
+    .member-list li{padding:4px 0;display:flex;justify-content:space-between;align-items:center;}
+    .contact-links{display:flex;gap:12px;}
+    .c-link{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);text-decoration:none;font-weight:600;border-bottom:1px solid transparent;}
+    .c-link:hover{border-bottom-color:var(--indigo);}
+    .c-link.wa{color:#128C7E;}.c-link.wa:hover{border-bottom-color:#128C7E;}
+    .row-actions{margin-top:16px;}
+    .empty-state{padding:40px 22px;text-align:center;color:var(--ink-soft);font-size:14px;}
+    .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:500;padding:12px 22px;border-radius:3px;opacity:0;transition:opacity .2s ease,transform .2s ease;z-index:1000;pointer-events:none;white-space:nowrap;}
+    .toast.toast-error{background:var(--brick);}
+    .toast.toast-show{opacity:1;transform:translateX(-50%) translateY(0);}
+    #driverSection{display:none;}
+    @media(max-width:600px){.driver-stats-grid{border-left:none;padding-left:0;border-top:1px dashed var(--line);padding-top:16px;width:100%;justify-content:space-between;}}
   </style>
 </head>
 <body>
-
   <div class="wrap">
     <div class="masthead">
       <div class="masthead-row">
@@ -83,7 +75,7 @@
           <p class="eyebrow">Campus Transport Coordination</p>
           <h1>Driver Portal</h1>
         </div>
-        <a class="student-link" href="index.html">← Ride board</a>
+        <a class="student-link" href="index.html">&#x2190; Ride board</a>
       </div>
     </div>
 
@@ -92,36 +84,19 @@
         <div class="tab active" id="loginTab" onclick="showTab('login')">Sign in</div>
         <div class="tab" id="signupTab" onclick="showTab('signup')">Register</div>
       </div>
-
       <div class="panel" id="loginCard">
         <form id="loginForm">
-          <div class="field">
-            <label>Phone number</label>
-            <input type="text" id="loginPhone" required placeholder="+91 98765 43210">
-          </div>
-          <div class="field">
-            <label>Password</label>
-            <input type="password" id="loginPassword" required>
-          </div>
+          <div class="field"><label>Phone number</label><input type="text" id="loginPhone" required placeholder="+91 98765 43210"></div>
+          <div class="field"><label>Password</label><input type="password" id="loginPassword" required></div>
           <button type="submit" class="btn-primary">Sign in</button>
           <div class="error-text" id="loginError"></div>
         </form>
       </div>
-
       <div class="panel" id="signupCard" style="display:none;">
         <form id="signupForm">
-          <div class="field">
-            <label>Full name</label>
-            <input type="text" id="signupName" required>
-          </div>
-          <div class="field">
-            <label>Phone number</label>
-            <input type="text" id="signupPhone" required placeholder="+91 98765 43210">
-          </div>
-          <div class="field">
-            <label>Password</label>
-            <input type="password" id="signupPassword" required minlength="6">
-          </div>
+          <div class="field"><label>Full name</label><input type="text" id="signupName" required></div>
+          <div class="field"><label>Phone number</label><input type="text" id="signupPhone" required placeholder="+91 98765 43210"></div>
+          <div class="field"><label>Password</label><input type="password" id="signupPassword" required minlength="6"></div>
           <button type="submit" class="btn-primary">Register</button>
           <div class="error-text" id="signupError"></div>
         </form>
@@ -129,48 +104,63 @@
     </div>
 
     <div id="driverSection">
-      <div class="welcome">
-        <span>Signed in as <strong id="driverNameLabel"></strong></span>
-        <button class="btn-outline" onclick="logout()">Sign out</button>
+      <div class="welcome-panel">
+        <div class="welcome-left">
+          <span>Signed in as <strong id="driverNameLabel"></strong></span>
+          <button class="btn-outline" style="font-size:11px;padding:4px 10px;width:fit-content;" onclick="logout()">Sign out</button>
+        </div>
+        <div class="driver-stats-grid">
+          <div class="d-stat"><div class="d-stat-label">Trips done</div><div class="d-stat-val" id="statTrips">0</div></div>
+          <div class="d-stat"><div class="d-stat-label">Earnings</div><div class="d-stat-val" id="statEarn">&#x20b9;0</div></div>
+        </div>
       </div>
-
-      <div class="section-head">
-        <h2>Requests awaiting a driver</h2>
+      <div class="dashboard-tabs">
+        <div class="d-tab active" id="tabAvailable" onclick="setDriverTab('AVAILABLE')">Available Requests</div>
+        <div class="d-tab" id="tabMine" onclick="setDriverTab('MINE')">My Confirmed Rides</div>
       </div>
-      <div class="board" id="pendingList">
-        <div class="empty-state">Loading requests…</div>
-      </div>
+      <div class="board" id="pendingList"><div class="empty-state">Loading&#x2026;</div></div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://vit-carpooling-deployment.onrender.com/api';
+    var isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    var BACKEND_URL = isLocal ? 'http://localhost:5001' : 'https://vit-carpool-backend.onrender.com';
+    var API_URL = BACKEND_URL + '/api';
 
-    // ---------- AUTH STATE ----------
-    // We now store the driver's profile AND their JWT together, since the
-    // profile alone isn't proof of anything — the token is what the server
-    // actually trusts on protected routes.
-    const AUTH_KEY = 'carpool_driver_auth';
+    var socket = io(BACKEND_URL);
+    socket.on('groups:changed', function() { if (auth) loadPending(); });
 
-    function getAuth() {
-      return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+    var AUTH_KEY = 'carpool_driver_auth';
+    function getAuth() { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
+    function setAuth(driver, token) { localStorage.setItem(AUTH_KEY, JSON.stringify({driver:driver,token:token})); }
+    function clearAuth() { localStorage.removeItem(AUTH_KEY); }
+
+    var auth = getAuth();
+    var currentDriverTab = 'AVAILABLE';
+    var cachedDriverGroups = [];
+
+    function showToast(message, type) {
+      var old = document.querySelector('.toast'); if (old) old.remove();
+      var toast = document.createElement('div');
+      toast.className = 'toast' + (type === 'error' ? ' toast-error' : '');
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { toast.classList.add('toast-show'); }); });
+      setTimeout(function() { toast.classList.remove('toast-show'); setTimeout(function() { toast.remove(); }, 200); }, 3000);
     }
-
-    function setAuth(driver, token) {
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ driver, token }));
-    }
-
-    function clearAuth() {
-      localStorage.removeItem(AUTH_KEY);
-    }
-
-    let auth = getAuth();
 
     function showTab(tab) {
       document.getElementById('loginTab').classList.toggle('active', tab === 'login');
       document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
       document.getElementById('loginCard').style.display = tab === 'login' ? 'block' : 'none';
       document.getElementById('signupCard').style.display = tab === 'signup' ? 'block' : 'none';
+    }
+
+    function setDriverTab(tab) {
+      currentDriverTab = tab;
+      document.getElementById('tabAvailable').classList.toggle('active', tab === 'AVAILABLE');
+      document.getElementById('tabMine').classList.toggle('active', tab === 'MINE');
+      renderDriverBoard();
     }
 
     function renderAuthState() {
@@ -185,147 +175,101 @@
       }
     }
 
-    function logout() {
-      auth = null;
-      clearAuth();
-      renderAuthState();
-    }
+    function logout() { auth = null; clearAuth(); showToast('Logged out'); renderAuthState(); }
 
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const errorEl = document.getElementById('signupError');
-      errorEl.textContent = '';
-
-      const payload = {
-        name: document.getElementById('signupName').value,
-        phone: document.getElementById('signupPhone').value,
-        password: document.getElementById('signupPassword').value
-      };
-
+      var errorEl = document.getElementById('signupError'); errorEl.textContent = '';
+      var payload = { name: document.getElementById('signupName').value, phone: document.getElementById('signupPhone').value, password: document.getElementById('signupPassword').value };
       try {
-        const res = await fetch(`${API_URL}/drivers/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
+        var res = await fetch(API_URL + '/drivers/signup', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        var data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Registration failed.'; return; }
-
-        // Signup doesn't issue a token — send them to sign in right after.
+        showToast('Registered successfully. Please sign in.');
         showTab('login');
         document.getElementById('signupForm').reset();
         document.getElementById('loginPhone').value = payload.phone;
-      } catch (err) {
-        errorEl.textContent = 'Network error: ' + err.message;
-      }
+      } catch(err) { errorEl.textContent = 'Network error: ' + err.message; }
     });
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const errorEl = document.getElementById('loginError');
-      errorEl.textContent = '';
-
-      const payload = {
-        phone: document.getElementById('loginPhone').value,
-        password: document.getElementById('loginPassword').value
-      };
-
+      var errorEl = document.getElementById('loginError'); errorEl.textContent = '';
+      var payload = { phone: document.getElementById('loginPhone').value, password: document.getElementById('loginPassword').value };
       try {
-        const res = await fetch(`${API_URL}/drivers/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
+        var res = await fetch(API_URL + '/drivers/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        var data = await res.json();
         if (!res.ok) { errorEl.textContent = data.error || 'Sign-in failed.'; return; }
-
-        auth = { driver: data.driver, token: data.token };
+        auth = {driver:data.driver, token:data.token};
         setAuth(data.driver, data.token);
+        showToast('Signed in successfully');
         renderAuthState();
-      } catch (err) {
-        errorEl.textContent = 'Network error: ' + err.message;
-      }
+      } catch(err) { errorEl.textContent = 'Network error: ' + err.message; }
     });
 
-    function fmtTime(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    function fmtTime(ds) { return new Date(ds).toLocaleString(undefined, {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+
+    function renderDriverBoard() {
+      var container = document.getElementById('pendingList');
+      var totalEarn = 0; var totalTrips = 0;
+      cachedDriverGroups.forEach(function(g) {
+        if (g.status === 'CONFIRMED' && auth && g.driverContact === auth.driver.phone) {
+          totalTrips++; totalEarn += g.costPerSeat * g.totalSeats;
+        }
+      });
+      document.getElementById('statTrips').textContent = totalTrips;
+      document.getElementById('statEarn').textContent = '\u20b9' + totalEarn;
+      var filtered = currentDriverTab === 'AVAILABLE'
+        ? cachedDriverGroups.filter(function(g) { return g.status === 'PENDING_DRIVER'; })
+        : cachedDriverGroups.filter(function(g) { return g.status === 'CONFIRMED' && auth && g.driverContact === auth.driver.phone; });
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">' + (currentDriverTab === 'AVAILABLE' ? 'No new requests right now.' : 'You have not claimed any rides yet.') + '</div>';
+        return;
+      }
+      container.innerHTML = filtered.map(function(g) {
+        var payout = g.costPerSeat * g.totalSeats;
+        var membersHtml = g.members.map(function(m) {
+          if (g.status === 'PENDING_DRIVER') {
+            return '<li><span>' + m.name + '</span><div class="contact-links"><span style="color:var(--ink-soft);font-size:11px;">Hidden until accepted</span></div></li>';
+          }
+          var rawPhone = m.contact.replace(/\D/g,'');
+          return '<li><span>' + m.name + '</span><div class="contact-links"><a href="tel:' + m.contact + '" class="c-link">Call</a><a href="https://wa.me/' + rawPhone + '" target="_blank" class="c-link wa">WhatsApp</a></div></li>';
+        }).join('');
+        var actionBlock = g.status === 'PENDING_DRIVER'
+          ? '<div class="row-actions"><button class="btn-primary" onclick="acceptGroup(\'' + g._id + '\')">Accept ride &mdash; \u20b9' + payout + '</button></div>'
+          : '<div style="margin-top:14px;font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--sage);font-weight:600;">\u2713 You accepted this ride. Contact passengers to coordinate pickup.</div>';
+        return '<div class="row"><div class="route-header"><div class="route">' + (g.origin || 'VIT Vellore') + '<span class="arrow">&rarr;</span>' + g.destination + '</div><div class="payout-pill">Total Payout: \u20b9' + payout + '</div></div><div class="meta-line">' + fmtTime(g.departureTime) + ' &middot; ' + g.members.length + '/' + g.totalSeats + ' seats &middot; \u20b9' + g.costPerSeat + ' per seat</div><div class="members-block"><div class="members-label">Passengers</div><ul class="member-list">' + membersHtml + '</ul></div>' + actionBlock + '</div>';
+      }).join('');
     }
 
     async function loadPending() {
-      const container = document.getElementById('pendingList');
+      if (!auth || !auth.token) return;
       try {
-        const res = await fetch(`${API_URL}/driver/groups`);
-        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-        const groups = await res.json();
-
-        if (groups.length === 0) {
-          container.innerHTML = '<div class="empty-state">No requests waiting right now.</div>';
-          return;
-        }
-
-        container.innerHTML = groups.map(g => {
-          const membersList = g.members.map(m =>
-            `<li><span>${m.name}</span><span class="m-contact">${m.contact}</span></li>`
-          ).join('');
-          return `
-            <div class="row">
-              <div class="route">${g.origin}<span class="arrow">→</span>${g.destination}</div>
-              <div class="meta-line">${fmtTime(g.departureTime)} · ${g.members.length}/${g.totalSeats} seats filled · ₹${g.costPerSeat} per seat</div>
-              <div class="members-block">
-                <div class="members-label">Passengers</div>
-                <ul class="member-list">${membersList}</ul>
-              </div>
-              <div class="row-actions">
-                <button class="btn-primary" onclick="acceptGroup('${g._id}')">Accept ride</button>
-              </div>
-            </div>
-          `;
-        }).join('');
-      } catch (err) {
-        container.innerHTML = `<div class="empty-state error-text">Could not load requests. ${err.message}</div>`;
+        var res = await fetch(API_URL + '/driver/groups', {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        if (res.status === 401) { logout(); return; }
+        if (!res.ok) throw new Error('Server responded with ' + res.status);
+        cachedDriverGroups = await res.json();
+        renderDriverBoard();
+      } catch(err) {
+        document.getElementById('pendingList').innerHTML = '<div class="empty-state error-text">Could not load requests. ' + err.message + '</div>';
       }
     }
 
     async function acceptGroup(groupId) {
       if (!confirm('Accept this ride request?')) return;
-
-      if (!auth || !auth.token) {
-        alert('You need to sign in again.');
-        logout();
-        return;
-      }
-
+      if (!auth || !auth.token) { alert('You need to sign in again.'); logout(); return; }
       try {
-        const res = await fetch(`${API_URL}/groups/${groupId}/driver/accept`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${auth.token}`
-          },
-          body: JSON.stringify({})
-        });
-
-        // If the token is missing/expired/invalid, the server responds 401.
-        // Treat that as "session expired" and bounce back to the login screen
-        // rather than showing a confusing generic error.
-        if (res.status === 401) {
-          alert('Your session has expired. Please sign in again.');
-          logout();
-          return;
-        }
-
-        const data = await res.json();
+        var res = await fetch(API_URL + '/groups/' + groupId + '/driver/accept', {method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer ' + auth.token},body:JSON.stringify({})});
+        if (res.status === 401) { alert('Your session has expired. Please sign in again.'); logout(); return; }
+        var data = await res.json();
         if (!res.ok) { alert(data.error || 'Could not accept the ride.'); return; }
-
-        alert('Ride confirmed. Passenger contacts are visible on the ride board.');
+        showToast('Ride confirmed! Check My Confirmed Rides tab.');
+        setDriverTab('MINE');
         loadPending();
-      } catch (err) {
-        alert('Network error: ' + err.message);
-      }
+      } catch(err) { alert('Network error: ' + err.message); }
     }
-
-    setInterval(() => { if (auth) loadPending(); }, 15000);
 
     renderAuthState();
   </script>
