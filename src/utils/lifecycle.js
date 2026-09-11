@@ -1,9 +1,11 @@
 const crypto = require('crypto');
 
 // ---------- CONSTANTS ----------
-const FORMING_WINDOW_MS = 10 * 60 * 1000;      // 10 minutes to fill seats
-const LEAVE_CUTOFF_MS = 2 * 60 * 60 * 1000;    // members must leave >2hrs before departure
-const HOST_CANCEL_CUTOFF_MS = 10 * 60 * 1000;  // host can cancel up until 10 min before departure
+const FORMING_WINDOW_MS = 10 * 60 * 1000;          // 10 minutes to fill seats after group creation
+const LEAVE_CUTOFF_MS = 2 * 60 * 60 * 1000;        // members must leave >2hrs before departure
+const MIN_LEAD_TIME_MS = 10 * 60 * 1000;           // a ride must be created at least this far ahead of departure
+const HOST_CANCEL_CUTOFF_MS = 10 * 60 * 1000;      // host can cancel up until this long before departure
+const AUTO_EXPIRE_CUTOFF_MS = 10 * 60 * 1000;      // unconfirmed rides auto-expire this close to departure
 
 function generateGroupCode() {
   return crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
@@ -22,7 +24,7 @@ function applyLifecycleRules(group) {
   }
 
   if (group.status !== 'CANCELLED' && group.status !== 'EXPIRED') {
-    if (now > group.departureTime.getTime() - HOST_CANCEL_CUTOFF_MS && group.status !== 'CONFIRMED') {
+    if (now > group.departureTime.getTime() - AUTO_EXPIRE_CUTOFF_MS && group.status !== 'CONFIRMED') {
       group.status = 'EXPIRED';
     }
   }
@@ -49,7 +51,9 @@ function toPublicGroup(group) {
 module.exports = {
   FORMING_WINDOW_MS,
   LEAVE_CUTOFF_MS,
+  MIN_LEAD_TIME_MS,
   HOST_CANCEL_CUTOFF_MS,
+  AUTO_EXPIRE_CUTOFF_MS,
   generateGroupCode,
   findMemberByToken,
   applyLifecycleRules,

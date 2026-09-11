@@ -14,8 +14,8 @@ const rideGroupSchema = new mongoose.Schema({
   origin: { type: String, default: 'Campus Main Gate' },
   destination: { type: String, required: true },
   departureTime: { type: Date, required: true },
-  totalSeats: { type: Number, required: true, min: 1 },
-  costPerSeat: { type: Number, required: true },
+  totalSeats: { type: Number, required: true, min: 1, max: 6 },
+  costPerSeat: { type: Number, required: true, min: 1 },
   members: { type: [memberSchema], default: [] },
   status: {
     type: String,
