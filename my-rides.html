@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings & Active Rides — Campus Carpool</title>
+  <link rel="stylesheet" href="common.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav id="mainNavbar" class="navbar"></nav>
+
+  <!-- Hero Header -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Personal Dashboard</div>
+      <h1>My Bookings & Active Rides</h1>
+      <p class="lead">
+        Your reserved carpools, private group passcodes, QR sharing codes, and driver pickup details.
+      </p>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-bottom: 60px;">
+
+    <!-- Unauthenticated Banner -->
+    <div id="noAuthBanner" class="panel" style="display:none; text-align:center; padding:44px 20px; max-width:560px; margin:20px auto;">
+      <div style="font-size:32px; margin-bottom:12px;">🔒</div>
+      <h2 style="margin-bottom:8px;">Sign in to view your rides</h2>
+      <p style="color:var(--ink-soft); font-size:14px; margin-bottom:20px; line-height:1.6;">
+        Sign in with your campus account to view your private group passcodes, seat reservations, and driver contact links.
+      </p>
+      <a href="profile.html" class="btn btn-primary">Sign In / Register &rarr;</a>
+    </div>
+
+    <!-- Active Rides List -->
+    <div id="myRidesContainer" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2>Active & Upcoming Trips</h2>
+        <button onclick="loadMyRides()" class="btn btn-outline" style="font-size:12px; padding:4px 10px;">Refresh</button>
+      </div>
+
+      <div id="ridesList">
+        <div class="panel" style="text-align:center; color:var(--ink-soft);">
+          Loading your booked rides...
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>Campus Carpool Hub — VIT Vellore Transport Coordination</div>
+      <div>Editorial Typography & DPDP Privacy Safeguards</div>
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+  <script>
+    const socket = io(BACKEND_URL);
+    socket.on('groups:changed', () => loadMyRides());
+
+    function fmtTime(ds) {
+      return new Date(ds).toLocaleString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    async function loadMyRides() {
+      const auth = getAuth();
+      const noAuth = document.getElementById('noAuthBanner');
+      const container = document.getElementById('myRidesContainer');
+      const listEl = document.getElementById('ridesList');
+
+      if (!auth || !auth.user || !auth.token) {
+        noAuth.style.display = 'block';
+        container.style.display = 'none';
+        return;
+      }
+
+      noAuth.style.display = 'none';
+      container.style.display = 'block';
+
+      try {
+        const res = await fetch(API_URL + '/groups', {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        if (res.status === 401) {
+          clearAuth();
+          noAuth.style.display = 'block';
+          container.style.display = 'none';
+          return;
+        }
+        const groups = await res.json();
+
+        // Filter groups where the current user is a passenger, host, or driver
+        const userPhone = auth.user.phone;
+        const myGroups = groups.filter(g => {
+          const isPassenger = g.members && g.members.some(m => m.contact === userPhone);
+          const isAssignedDriver = g.driverContact === userPhone;
+          return isPassenger || isAssignedDriver;
+        });
+
+        if (myGroups.length === 0) {
+          listEl.innerHTML = `
+            <div class="panel" style="text-align:center; padding:36px 20px;">
+              <p style="font-size:15px; color:var(--ink-soft); margin-bottom:16px;">You have no active rides booked right now.</p>
+              <a href="index.html" class="btn btn-primary" style="font-size:13px;">Find or Create a Ride</a>
+            </div>
+          `;
+          return;
+        }
+
+        listEl.innerHTML = myGroups.map(g => {
+          const isDriver = g.driverContact === userPhone;
+          const myMemberRecord = g.members ? g.members.find(m => m.contact === userPhone) : null;
+          const isHost = myMemberRecord && myMemberRecord.isHost;
+
+          const statusBadge = g.status === 'CONFIRMED'
+            ? `<span class="tag tag-sage">CONFIRMED</span>`
+            : g.status === 'PENDING_DRIVER'
+            ? `<span class="tag tag-indigo">AWAITING DRIVER</span>`
+            : `<span class="tag tag-amber">FORMING</span>`;
+
+          const membersList = (g.members || []).map(m => `
+            <li style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:13px;">
+              <span>${m.name} ${m.isHost ? '<span class="tag tag-indigo" style="font-size:10px; padding:1px 5px;">Host</span>' : ''}</span>
+              <span style="font-family:'IBM Plex Mono', monospace; color:var(--ink-soft);">${m.contact}</span>
+            </li>
+          `).join('');
+
+          const driverInfo = g.status === 'CONFIRMED' ? `
+            <div style="background:var(--sage-soft); border:1px solid #d3e2d5; padding:14px; border-radius:4px; margin-top:14px; font-size:13px;">
+              <strong>Assigned Driver:</strong> ${g.driverName} (${g.driverContact})
+              <div style="margin-top:10px; display:flex; gap:10px;">
+                <a href="tel:${g.driverContact}" class="btn btn-outline" style="font-size:12px; padding:5px 12px;">Call Driver</a>
+                <a href="https://wa.me/${g.driverContact.replace(/\D/g,'')}" target="_blank" class="btn btn-sage" style="font-size:12px; padding:5px 12px;">WhatsApp</a>
+              </div>
+            </div>
+          ` : '';
+
+          return `
+            <div class="panel">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                <div>
+                  <div class="eyebrow">${g.origin || 'Campus Main Gate'} &rarr; ${g.destination}</div>
+                  <h2 style="margin:4px 0 6px;">${g.destination}</h2>
+                  <div style="font-family:'IBM Plex Mono', monospace; font-size:12.5px; color:var(--ink-soft);">
+                    Departure: ${fmtTime(g.departureTime)} &middot; ₹${g.costPerSeat} / seat
+                  </div>
+                </div>
+                <div>${statusBadge}</div>
+              </div>
+
+              <!-- Private Passcode Card -->
+              <div style="background:var(--paper); border:1px solid var(--line); padding:12px 16px; border-radius:4px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <span style="font-size:11px; text-transform:uppercase; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace;">Private Group Passcode:</span>
+                  <div style="font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--indigo); letter-spacing:3px;">${g.groupCode}</div>
+                </div>
+                <div>
+                  <a href="index.html?code=${g.groupCode}" class="btn btn-outline" style="font-size:11px; padding:5px 10px;">Share Link</a>
+                </div>
+              </div>
+
+              <!-- Passengers -->
+              <div style="margin-bottom:12px;">
+                <div style="font-size:11.5px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); margin-bottom:6px;">
+                  Confirmed Passengers (${g.members.length}/${g.totalSeats})
+                </div>
+                <ul style="list-style:none; padding:0;">${membersList}</ul>
+              </div>
+
+              ${driverInfo}
+
+              <!-- Host / Member Actions -->
+              ${isHost && g.status !== 'CANCELLED' ? `
+                <div style="margin-top:16px; border-top:1px solid var(--line); padding-top:12px; display:flex; justify-content:flex-end;">
+                  <button onclick="cancelMyRide('${g._id}')" class="btn btn-danger" style="font-size:12px; padding:6px 14px;">Cancel Entire Ride (Host)</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        listEl.innerHTML = `<div class="panel" style="color:var(--brick);">Failed to load bookings: ${err.message}</div>`;
+      }
+    }
+
+    async function cancelMyRide(groupId) {
+      if (!confirm('Are you sure you want to cancel this entire ride?')) return;
+      const auth = getAuth();
+      try {
+        const res = await fetch(API_URL + '/groups/' + groupId + '/cancel-auth', {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + (auth ? auth.token : '') }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Ride cancelled');
+          loadMyRides();
+        } else {
+          showToast(data.error || 'Cancellation failed', true);
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMyRides);
+  </script>
+</body>
+</html>

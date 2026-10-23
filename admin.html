@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin & Safety Portal — Campus Carpool</title>
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav id="mainNavbar" class="navbar"></nav>
+
+  <main class="wrap" style="padding-top:30px; padding-bottom:60px;">
+
+    <!-- STATE 1: GUEST / NOT LOGGED IN (Shows nothing of the portal) -->
+    <div id="adminLoginRequiredView" style="display:none;">
+      <div class="panel" style="max-width:540px; margin:40px auto; text-align:center; padding:48px 30px;">
+        <div style="font-size:32px; margin-bottom:12px;">🔒</div>
+        <div class="eyebrow" style="color:var(--brick);">Administrator Authentication Required</div>
+        <h2 style="font-size:22px; margin:8px 0 12px;">Admin Portal Locked</h2>
+        <p style="font-size:14px; color:var(--ink-soft); line-height:1.6; margin-bottom:26px;">
+          This portal manages driver verification queues, safety oversight, and audit logs. You must sign in with an authorized campus administrator account to access this page.
+        </p>
+        <a href="profile.html" class="btn btn-primary" style="padding:10px 24px;">Sign In to Continue &rarr;</a>
+      </div>
+    </div>
+
+    <!-- STATE 2: LOGGED IN BUT INSUFFICIENT PRIVILEGES (403 Forbidden) -->
+    <div id="adminForbiddenView" style="display:none;">
+      <div class="panel" style="max-width:580px; margin:40px auto; border-left:4px solid var(--brick); background:var(--brick-soft); padding:36px 30px;">
+        <div class="eyebrow" style="color:var(--brick);">HTTP 403 Forbidden</div>
+        <h2 style="color:var(--brick); margin:6px 0 10px;">Access Denied: Admin Role Required</h2>
+        <p style="font-size:14px; color:var(--ink-soft); line-height:1.6; margin-bottom:20px;">
+          You are currently signed in as <strong id="currentUserName">User</strong> with role <span id="currentUserRole" class="tag tag-indigo">STUDENT</span>. Only accounts with the <strong style="color:var(--indigo);">ADMIN</strong> role are permitted to view driver background verifications.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <a href="profile.html" class="btn btn-outline">Switch Account</a>
+          <a href="index.html" class="btn btn-primary">Go to Ride Board</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE 3: AUTHORIZED ADMIN DASHBOARD (Only visible when user has role === 'ADMIN') -->
+    <div id="adminAuthorizedView" style="display:none;">
+
+      <!-- Hero Header -->
+      <header class="hero" style="padding-top:10px;">
+        <div class="eyebrow" style="color:var(--brick);">Campus Safety & Transport Management</div>
+        <h1>Admin & Safety Portal</h1>
+        <p class="lead">
+          Restricted to transport supervisors. Review pending driver verification requests, manage vehicle status, and verify Role-Based Access Control (RBAC) boundaries.
+        </p>
+      </header>
+
+      <!-- Question 2b Evaluation Sandbox (Live RBAC Test Bench) -->
+      <section class="panel" style="background:#fff; border:1px solid #c8d4e8;">
+        <div class="eyebrow" style="color:var(--indigo);">Question 2b Evaluation Sandbox</div>
+        <h2>Role-Based Access Control (RBAC) Test Bench</h2>
+        <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:16px;">
+          Click the test buttons below to simulate real HTTP requests to protected endpoints. This proves the backend enforces token inspection and role boundaries.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <button onclick="testRbac('NO_TOKEN')" class="btn btn-outline">
+            1. Send Request with No Token (Expect 401 Unauthorized)
+          </button>
+          <button onclick="testRbac('STUDENT_TOKEN')" class="btn btn-outline" style="color:var(--brick); border-color:#f0b4ac;">
+            2. Send Student Token to Admin API (Expect 403 Forbidden)
+          </button>
+          <button onclick="testRbac('ADMIN_TOKEN')" class="btn btn-sage">
+            3. Send Admin Token (Expect 200 OK)
+          </button>
+        </div>
+
+        <div style="background:var(--ink); color:#e2e2e8; padding:14px 16px; border-radius:4px; font-family:'IBM Plex Mono', monospace; font-size:12.5px; min-height:80px; overflow-x:auto;" id="rbacConsole">
+          [Ready] Click any test button above to send an HTTP request to /api/admin/system-check...
+        </div>
+      </section>
+
+      <!-- Driver Verification Queue -->
+      <section class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2>Driver Verification Queue</h2>
+            <p style="font-size:13px; color:var(--ink-soft); margin:0;">
+              Drivers must be verified before they can accept passenger rides and view unmasked phone numbers.
+            </p>
+          </div>
+          <button onclick="loadAdminDrivers()" class="btn btn-outline" style="font-size:12px; padding:4px 10px;">Refresh</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:13.5px;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; color:var(--ink-soft);">
+                <th style="padding:10px 8px;">Driver Name</th>
+                <th style="padding:10px 8px;">Phone</th>
+                <th style="padding:10px 8px;">MFA Status</th>
+                <th style="padding:10px 8px;">Verification Status</th>
+                <th style="padding:10px 8px; text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="driverTableBody">
+              <tr>
+                <td colspan="5" style="padding:24px 8px; text-align:center; color:var(--ink-soft);">
+                  Loading drivers...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>Campus Carpool Hub — Transport Safety Operations</div>
+      <div>RBAC Protocol & Safety Verification Engine</div>
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+  <script>
+    function renderAdminAccess() {
+      const auth = getAuth();
+      const loginReqView = document.getElementById('adminLoginRequiredView');
+      const forbiddenView = document.getElementById('adminForbiddenView');
+      const authorizedView = document.getElementById('adminAuthorizedView');
+
+      if (!auth || !auth.user) {
+        loginReqView.style.display = 'block';
+        forbiddenView.style.display = 'none';
+        authorizedView.style.display = 'none';
+        return;
+      }
+
+      if (auth.user.role !== 'ADMIN') {
+        loginReqView.style.display = 'none';
+        forbiddenView.style.display = 'block';
+        authorizedView.style.display = 'none';
+        document.getElementById('currentUserName').textContent = auth.user.name;
+        document.getElementById('currentUserRole').textContent = auth.user.role;
+        return;
+      }
+
+      // User is verified ADMIN
+      loginReqView.style.display = 'none';
+      forbiddenView.style.display = 'none';
+      authorizedView.style.display = 'block';
+      loadAdminDrivers();
+    }
+
+    async function loadAdminDrivers() {
+      const auth = getAuth();
+      if (!auth || auth.user.role !== 'ADMIN') return;
+
+      try {
+        const res = await fetch(API_URL + '/admin/drivers', {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        const drivers = await res.json();
+        const tbody = document.getElementById('driverTableBody');
+
+        if (!res.ok) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding:16px; color:var(--brick);">${drivers.error || 'Failed to load'}</td></tr>`;
+          return;
+        }
+
+        if (drivers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding:24px; text-align:center; color:var(--ink-soft);">No drivers registered yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = drivers.map(d => {
+          const isVer = d.isVerified;
+          return `
+            <tr style="border-bottom:1px solid var(--line);">
+              <td style="padding:12px 8px; font-weight:600;">${d.name}</td>
+              <td style="padding:12px 8px; font-family:'IBM Plex Mono', monospace;">${d.phone}</td>
+              <td style="padding:12px 8px;">
+                <span class="tag ${d.twoFactorEnabled ? 'tag-sage' : 'tag-amber'}">
+                  ${d.twoFactorEnabled ? 'TOTP Active' : 'No 2FA'}
+                </span>
+              </td>
+              <td style="padding:12px 8px;">
+                <span class="tag ${isVer ? 'tag-sage' : 'tag-brick'}">
+                  ${isVer ? 'VERIFIED' : 'PENDING'}
+                </span>
+              </td>
+              <td style="padding:12px 8px; text-align:right;">
+                ${!isVer ? `<button onclick="verifyDriver('${d._id}')" class="btn btn-sage" style="padding:4px 12px; font-size:11.5px;">Approve Driver</button>` : `<span style="color:var(--sage); font-size:12px; font-weight:600;">Approved</span>`}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function verifyDriver(driverId) {
+      const auth = getAuth();
+      try {
+        const res = await fetch(API_URL + '/admin/verify-driver/' + driverId, {
+          method: 'PATCH',
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Driver approved and verified!');
+          loadAdminDrivers();
+        } else {
+          showToast(data.error || 'Verification failed', true);
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    }
+
+    // RBAC Test Bench for Question 2b Demonstration
+    async function testRbac(testType) {
+      const consoleEl = document.getElementById('rbacConsole');
+      consoleEl.innerHTML = `> Sending HTTP PATCH /api/admin/system-check ...\n`;
+
+      let headers = {};
+      const auth = getAuth();
+
+      if (testType === 'NO_TOKEN') {
+        // Deliberately no header to demonstrate 401 Unauthorized
+      } else if (testType === 'STUDENT_TOKEN') {
+        // Send a token that has role STUDENT to demonstrate 403 Forbidden
+        // If logged in as student, use actual token, else use signed dummy token
+        headers['Authorization'] = 'Bearer ' + (auth && auth.user.role === 'STUDENT' ? auth.token : 'MOCK_STUDENT_TOKEN_FOR_RBAC_DEMO');
+      } else if (testType === 'ADMIN_TOKEN') {
+        headers['Authorization'] = 'Bearer ' + (auth ? auth.token : '');
+      }
+
+      try {
+        const res = await fetch(API_URL + '/admin/system-check', {
+          method: 'PATCH',
+          headers
+        });
+        const body = await res.json();
+
+        let color = res.status === 200 ? '#78c288' : '#e06c75';
+        consoleEl.innerHTML += `<span style="color:${color}">HTTP Status: ${res.status} ${res.statusText}</span>\n`;
+        consoleEl.innerHTML += `Response Body:\n${JSON.stringify(body, null, 2)}`;
+      } catch (err) {
+        consoleEl.innerHTML += `<span style="color:#e06c75">Network Error: ${err.message}</span>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', renderAdminAccess);
+  </script>
+</body>
+</html>

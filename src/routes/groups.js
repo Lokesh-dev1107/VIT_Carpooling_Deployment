@@ -1,7 +1,9 @@
 const express = require('express');
 const RideGroup = require('../models/RideGroup');
 const Driver = require('../models/Driver');
+const User = require('../models/User');
 const requireDriver = require('../middleware/requireDriver');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const {
   FORMING_WINDOW_MS,
   LEAVE_CUTOFF_MS,
@@ -17,10 +19,12 @@ const {
 
 const router = express.Router();
 
-// CREATE: student starts a new ride group (becomes host)
-router.post('/', async (req, res) => {
+// CREATE: student starts a new ride group (requires authenticated user)
+router.post('/', requireAuth, async (req, res) => {
   try {
-    const { destination, departureTime, totalSeats, costPerSeat, hostName, hostContact } = req.body;
+    const { destination, departureTime, totalSeats, costPerSeat } = req.body;
+    const hostName = req.user.name || req.body.hostName;
+    const hostContact = req.user.phone || req.body.hostContact;
 
     if (!destination || !departureTime || !totalSeats || !costPerSeat || !hostName || !hostContact) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -39,7 +43,7 @@ router.post('/', async (req, res) => {
     if (isNaN(departure.getTime())) {
       return res.status(400).json({ error: 'Invalid departure time' });
     }
-        if (departure.getTime() <= Date.now() + MIN_LEAD_TIME_MS) {
+    if (departure.getTime() <= Date.now() + MIN_LEAD_TIME_MS) {
       return res.status(400).json({ error: 'Departure time must be at least 10 minutes from now' });
     }
 
@@ -77,6 +81,8 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+// READ: aggregate platform activity metrics (public for landing page)
 router.get('/stats', async (req, res) => {
   try {
     const byDestination = await RideGroup.aggregate([
@@ -113,8 +119,8 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// READ: all groups visible to students (not cancelled)
-router.get('/', async (req, res) => {
+// READ: all active groups (Protected: Requires Authenticated Campus User)
+router.get('/', requireAuth, async (req, res) => {
   try {
     const groups = await RideGroup.find({ status: { $ne: 'CANCELLED' } }).sort({ createdAt: -1 });
     const updated = [];
@@ -130,8 +136,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// READ: single group by code (for joining)
-router.get('/code/:code', async (req, res) => {
+// READ: single group by code (Protected: Requires Authenticated Campus User)
+router.get('/code/:code', requireAuth, async (req, res) => {
   try {
     const group = await RideGroup.findOne({ groupCode: req.params.code.toUpperCase() });
     if (!group) return res.status(404).json({ error: 'No group found with that code' });
@@ -142,13 +148,13 @@ router.get('/code/:code', async (req, res) => {
   }
 });
 
-// UPDATE: join a group using its code
-router.post('/:id/join', async (req, res) => {
+// UPDATE: join a group using its code (Protected: Requires Authenticated Campus User)
+router.post('/:id/join', requireAuth, async (req, res) => {
   try {
-    const { name, contact } = req.body;
+    const name = req.user.name || req.body.name;
+    const contact = req.user.phone || req.body.contact;
     if (!name || !contact) return res.status(400).json({ error: 'Name and contact are required' });
 
-    // Read-first for a good error message, same pattern as accept.
     const existing = await RideGroup.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Group not found' });
     await saveWithLifecycle(existing);
@@ -207,10 +213,10 @@ router.delete('/:id/members/me', async (req, res) => {
     applyLifecycleRules(group);
 
     if (['CANCELLED', 'EXPIRED', 'CONFIRMED'].includes(group.status)) {
-    const reason = group.status === 'CONFIRMED'
-      ? 'A driver has already been confirmed for this ride — contact your host directly, or cancel the whole ride if plans changed.'
-      : `Cannot leave — group is ${group.status}`;
-    return res.status(400).json({ error: reason });
+      const reason = group.status === 'CONFIRMED'
+        ? 'A driver has already been confirmed for this ride — contact your host directly, or cancel the whole ride if plans changed.'
+        : `Cannot leave — group is ${group.status}`;
+      return res.status(400).json({ error: reason });
     }
 
     const timeUntilDeparture = group.departureTime.getTime() - Date.now();
@@ -269,13 +275,43 @@ router.delete('/:id/cancel', async (req, res) => {
   }
 });
 
-// UPDATE: driver accepts a group
-router.patch('/:id/driver/accept', requireDriver, async (req, res) => {
+// DELETE (RBAC Protected): Cancel ride with JWT authentication (Host or Admin only)
+router.delete('/:id/cancel-auth', requireAuth, async (req, res) => {
   try {
-    const driverId = req.driverAuth.driverId;
+    const group = await RideGroup.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    const driver = await Driver.findById(driverId);
-    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+    const host = group.members.find(m => m.isHost);
+    const isHost = host && host.contact === req.user.phone;
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isHost && !isAdmin) {
+      return res.status(403).json({ error: 'Forbidden: Only the ride host or a campus administrator can cancel this ride' });
+    }
+
+    group.status = 'CANCELLED';
+    await group.save();
+    req.app.get('io').emit('groups:changed');
+    res.json({ message: 'Ride group cancelled successfully', group: toPublicGroup(group) });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// UPDATE: driver accepts a group (Requires verified driver account)
+router.patch('/:id/driver/accept', requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== 'DRIVER') {
+      return res.status(403).json({ error: 'Forbidden: Only registered drivers can accept ride requests' });
+    }
+
+    // Check verification status in User model
+    const driverUser = await User.findById(req.user.id);
+    if (!driverUser || !driverUser.isVerified) {
+      return res.status(403).json({
+        error: 'Forbidden: Your driver account is awaiting verification by campus transport admin.'
+      });
+    }
 
     const existing = await RideGroup.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Group not found' });
@@ -290,11 +326,11 @@ router.patch('/:id/driver/accept', requireDriver, async (req, res) => {
       { _id: req.params.id, status: 'PENDING_DRIVER' },
       {
         status: 'CONFIRMED',
-        driverId: driver._id,
-        driverName: driver.name,
-        driverContact: driver.phone
+        driverId: driverUser._id,
+        driverName: driverUser.name,
+        driverContact: driverUser.phone
       },
-      { new: true } // return the document AFTER the update, not before
+      { new: true }
     );
     if (!group) {
       return res.status(409).json({ error: 'This ride was just claimed by another driver' });

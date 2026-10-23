@@ -141,6 +141,3 @@ docker run -p 5001:5001 --env-file .env vit-carpooling:latest
 | `GET` | `/api/driver/groups` | Fetch available pending and confirmed rides | Bearer JWT |
 
 ---
-
-## 📄 License
-Academic project built for Cloud Computing coursework at **Vellore Institute of Technology (VIT Chennai)**.

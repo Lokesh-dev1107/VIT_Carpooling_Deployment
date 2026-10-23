@@ -3,77 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campus Carpool — Ride Board</title>
+  <title>Campus Carpool — Find & Host Rides</title>
+  <link rel="stylesheet" href="common.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-    :root {
-      --paper:#FAFAF7;--panel:#FFFFFF;--ink:#1C1C1E;--ink-soft:#55555C;--line:#E1DFD8;
-      --indigo:#2B3A67;--indigo-soft:#EEF0F6;--sage:#5F7F63;--sage-soft:#EBF1EC;
-      --brick:#A6402F;--amber-dot:#B8863B;
-    }
-    *{box-sizing:border-box;}
-    html{-webkit-font-smoothing:antialiased;}
-    body{font-family:'Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);margin:0;padding:0 0 80px;}
-    .wrap{max-width:880px;margin:0 auto;padding:0 24px;}
-    .masthead{border-bottom:1px solid var(--line);padding:36px 0 20px;margin-bottom:36px;}
-    .masthead-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;}
-    .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px;}
-    h1{font-family:'Source Serif 4',serif;font-weight:700;font-size:32px;margin:0;letter-spacing:-0.2px;}
-    .driver-link{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--indigo);text-decoration:none;border-bottom:1px solid var(--indigo);padding-bottom:2px;white-space:nowrap;}
-    .driver-link:hover{color:var(--ink);border-color:var(--ink);}
-    .section-head{display:flex;align-items:baseline;gap:10px;margin:0 0 16px;}
-    .section-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);}
-    h2{font-family:'Source Serif 4',serif;font-weight:600;font-size:19px;margin:0;}
-    section{margin-bottom:44px;}
-    .panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:24px 26px;}
-    .form-row{display:flex;gap:18px;flex-wrap:wrap;}
-    .field{margin-bottom:16px;flex:1;min-width:180px;}
-    .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
-    .field input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;}
-    .field input:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(43,58,103,0.1);}
-    button{font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;border:none;border-radius:2px;padding:11px 20px;cursor:pointer;}
-    .btn-primary{background:var(--indigo);color:#fff;}.btn-primary:hover{background:#223057;}
-    .btn-outline{background:transparent;border:1px solid var(--line);color:var(--ink);}.btn-outline:hover{border-color:var(--ink);}
-    .btn-danger-text{background:transparent;border:none;color:var(--brick);font-weight:600;padding:8px 4px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;}
-    .btn-danger-text:hover{color:#7d2f22;}
-    .join-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
-    .join-row .field{margin-bottom:0;}
-    .code-field input{text-transform:uppercase;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;text-align:center;font-weight:600;}
-    .error-text{color:var(--brick);font-size:13px;margin-top:10px;}
-    .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:500;padding:12px 22px;border-radius:3px;opacity:0;transition:opacity .2s ease,transform .2s ease;z-index:1000;pointer-events:none;white-space:nowrap;}
-    .toast.toast-error{background:var(--brick);}
-    .toast.toast-show{opacity:1;transform:translateX(-50%) translateY(0);}
-    .modal-overlay{position:fixed;inset:0;background:rgba(28,28,30,.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;transition:opacity .15s ease;}
-    .modal-overlay.modal-show{opacity:1;}
-    .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:28px 30px;max-width:420px;width:calc(100% - 48px);transform:translateY(10px);transition:transform .15s ease;}
-    .modal-overlay.modal-show .modal-box{transform:translateY(0);}
-    .modal-title{font-family:'Source Serif 4',serif;font-weight:600;font-size:18px;margin:0 0 8px;}
-    .modal-body{font-size:14px;color:var(--ink-soft);margin:0 0 24px;line-height:1.6;}
-    .modal-actions{display:flex;justify-content:flex-end;gap:10px;}
-    .success-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:24px;}
-    .success-code-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;}
-    .success-code{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:500;letter-spacing:5px;color:var(--indigo);margin-bottom:16px;}
-    .presets-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;}
+    .analytics-section{margin-bottom:40px;}
+    .analytics-grid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--line);gap:1px;margin-bottom:16px;}
+    .analytics-lower{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .analytics-panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px 22px;}
+    .analytics-panel-title{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px;}
+    .status-bar-track{display:flex;height:8px;border-radius:2px;overflow:hidden;gap:2px;margin-bottom:12px;background:var(--indigo-soft);}
+    .status-bar-segment{height:100%;border-radius:1px;transition:width .4s ease;}
+    .status-legend{display:flex;flex-wrap:wrap;gap:8px 14px;}
+    .legend-item{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+    .legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    .route-row{margin-bottom:10px;}
+    .route-row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+    .route-name{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+    .route-count{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);flex-shrink:0;margin-left:8px;}
+    .route-bar-track{height:4px;background:var(--indigo-soft);border-radius:2px;}
+    .route-bar-fill{height:100%;background:var(--indigo);border-radius:2px;transition:width .4s ease;}
+
+    .process-card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:22px;position:relative;}
+    .step-num-badge{width:24px;height:24px;border-radius:50%;background:var(--indigo);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+
     .presets-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
-    .preset-chip{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 10px;border:1px solid var(--line);border-radius:2px;background:var(--panel);color:var(--ink-soft);cursor:pointer;transition:all .15s ease;}
-    .preset-chip:hover{border-color:var(--ink);color:var(--ink);}
+    .preset-chip{font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:6px 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink-soft);cursor:pointer;transition:all .15s ease;}
+    .preset-chip:hover{border-color:var(--indigo);color:var(--indigo);background:#fff;}
+
     .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;}
     .filter-tabs{display:flex;gap:16px;}
-    .filter-tab{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;letter-spacing:.5px;}
+    .filter-tab{font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;letter-spacing:.5px;}
     .filter-tab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--indigo);}
     .filter-tab:hover:not(.active){color:var(--ink);}
-    .search-box{margin-left:auto;display:flex;align-items:center;border:1px solid var(--line);border-radius:2px;background:var(--panel);padding:4px 10px;}
-    .search-box input{border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink);width:160px;}
-    .search-box input::placeholder{color:#BDBDBA;}
+    .search-box{margin-left:auto;display:flex;align-items:center;border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:4px 10px;}
+    .search-box input{border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);width:180px;}
+
     .stepper{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;margin:14px 0 12px;}
     .step-line{flex:1;height:1px;border-top:1px dashed var(--line);}
     .step-line.completed{border-top:1px solid var(--sage);}
     .seats-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-    .seat-slot{padding:4px 8px;border:1px solid var(--line);border-radius:2px;font-size:12px;display:inline-flex;align-items:center;gap:6px;background:var(--panel);}
+    .seat-slot{padding:4px 8px;border:1px solid var(--line);border-radius:3px;font-size:12px;display:inline-flex;align-items:center;gap:6px;background:var(--panel);}
     .seat-slot.empty{border-style:dashed;color:var(--ink-soft);background:transparent;}
-    .board{border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--panel);}
+
+    .board{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--panel);}
     .row{display:flex;flex-direction:column;padding:18px 22px;border-bottom:1px solid var(--line);}
     .row:last-child{border-bottom:none;}
     .row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
@@ -91,140 +65,271 @@
     .members-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
     .members-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
     .member-list{list-style:none;margin:0;padding:0;font-size:13.5px;}
-    .member-list li{padding:2px 0;display:flex;justify-content:space-between;max-width:420px;}
+    .member-list li{padding:3px 0;display:flex;justify-content:space-between;max-width:440px;}
     .member-list li .m-contact{color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12px;}
-    .host-flag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--indigo);border:1px solid var(--indigo-soft);background:var(--indigo-soft);padding:1px 6px;border-radius:2px;margin-left:8px;}
-    .you-flag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--sage);border:1px solid #D6E4D8;background:var(--sage-soft);padding:1px 6px;border-radius:2px;margin-left:8px;}
-    .driver-block{margin-top:12px;background:var(--sage-soft);border:1px solid #D6E4D8;padding:10px 14px;border-radius:2px;font-size:13px;}
+    .host-flag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--indigo);border:1px solid var(--indigo-soft);background:var(--indigo-soft);padding:1px 6px;border-radius:2px;margin-left:6px;}
+    .you-flag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--sage);border:1px solid #D6E4D8;background:var(--sage-soft);padding:1px 6px;border-radius:2px;margin-left:6px;}
+    .driver-block{margin-top:12px;background:var(--sage-soft);border:1px solid #D6E4D8;padding:10px 14px;border-radius:3px;font-size:13px;}
     .driver-block strong{color:var(--sage);}
-    .row-actions{margin-top:14px;display:flex;gap:18px;align-items:center;}
-    .empty-state{padding:40px 22px;text-align:center;color:var(--ink-soft);font-size:14px;}
-    footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
-    .analytics-section{margin-bottom:44px;}
-    .analytics-grid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--line);gap:1px;margin-bottom:16px;}
-    .stat-card{background:var(--panel);padding:20px 22px;}
-    .stat-label{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;}
-    .stat-value{font-family:'Source Serif 4',serif;font-size:30px;font-weight:700;color:var(--ink);line-height:1;}
-    .stat-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-top:6px;}
-    .analytics-lower{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-    .analytics-panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:20px 22px;}
-    .analytics-panel-title{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px;}
-    .status-bar-track{display:flex;height:8px;border-radius:2px;overflow:hidden;gap:2px;margin-bottom:12px;background:var(--indigo-soft);}
-    .status-bar-segment{height:100%;border-radius:1px;transition:width .4s ease;}
-    .status-legend{display:flex;flex-wrap:wrap;gap:8px 14px;}
-    .legend-item{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
-    .legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-    .route-row{margin-bottom:10px;}.route-row:last-child{margin-bottom:0;}
-    .route-row-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
-    .route-name{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
-    .route-count{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);flex-shrink:0;margin-left:8px;}
-    .route-bar-track{height:4px;background:var(--indigo-soft);border-radius:2px;}
-    .route-bar-fill{height:100%;background:var(--indigo);border-radius:2px;transition:width .4s ease;}
-    @media(max-width:620px){.analytics-grid{grid-template-columns:repeat(2,1fr);}.analytics-lower{grid-template-columns:1fr;}}
+    .empty-state{padding:44px 22px;text-align:center;color:var(--ink-soft);font-size:14px;}
+    @media(max-width:768px){.analytics-grid{grid-template-columns:repeat(2,1fr);}.analytics-lower{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="masthead">
-      <div class="masthead-row">
-        <div>
-          <p class="eyebrow">Campus Transport Coordination</p>
-          <h1>Ride Board</h1>
-        </div>
-        <a class="driver-link" href="driver.html">Driver sign-in &#x2192;</a>
-      </div>
-    </div>
 
+  <!-- Top Navigation Bar -->
+  <nav id="mainNavbar" class="navbar"></nav>
+
+  <div class="wrap" style="padding-top:20px;">
+
+    <!-- Masthead / Hero -->
+    <header class="hero" style="padding-top:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+        <div>
+          <div class="eyebrow">VIT Vellore Transport Coordination</div>
+          <h1>Find & Host Rides</h1>
+          <p class="lead">
+            Coordinate shared rides to Katpadi Station, Chennai, & Bangalore airports. Split fares transparently with campus members and connect with verified drivers.
+          </p>
+        </div>
+        <div id="heroAuthCta"></div>
+      </div>
+    </header>
+
+    <!-- Public Platform Activity Metrics (Aggregate Stats) -->
     <section class="analytics-section">
-      <div class="section-head"><span class="section-num">00</span><h2>Platform activity</h2></div>
+      <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">00</span>
+        <h2 style="font-size:18px; margin:0;">Campus Ride Statistics</h2>
+      </div>
       <div class="analytics-grid">
-        <div class="stat-card"><div class="stat-label">Total Rides</div><div class="stat-value" id="statTotalRides">&#x2014;</div><div class="stat-sub">all time</div></div>
-        <div class="stat-card"><div class="stat-label">Occupancy Rate</div><div class="stat-value" id="statOccupancy">&#x2014;</div><div class="stat-sub">seats filled / offered</div></div>
-        <div class="stat-card"><div class="stat-label">Avg cost / seat</div><div class="stat-value" id="statAvgCost">&#x2014;</div><div class="stat-sub">across all rides</div></div>
-        <div class="stat-card"><div class="stat-label">Last 24 hrs</div><div class="stat-value" id="statRecent">&#x2014;</div><div class="stat-sub">new ride requests</div></div>
+        <div class="stat-card"><div class="stat-lbl">Total Rides</div><div class="stat-val" id="statTotalRides">—</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:4px;">all time</div></div>
+        <div class="stat-card"><div class="stat-lbl">Occupancy Rate</div><div class="stat-val" id="statOccupancy">—</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:4px;">seats filled / offered</div></div>
+        <div class="stat-card"><div class="stat-lbl">Avg Cost / Seat</div><div class="stat-val" id="statAvgCost">—</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:4px;">across all rides</div></div>
+        <div class="stat-card"><div class="stat-lbl">Last 24 Hours</div><div class="stat-val" id="statRecent">—</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:4px;">new rides created</div></div>
       </div>
       <div class="analytics-lower">
         <div class="analytics-panel">
-          <div class="analytics-panel-title">Status breakdown</div>
+          <div class="analytics-panel-title">Status Breakdown</div>
           <div class="status-bar-track" id="statusBarTrack"></div>
           <div class="status-legend" id="statusLegend"></div>
         </div>
         <div class="analytics-panel">
-          <div class="analytics-panel-title">Top destinations</div>
+          <div class="analytics-panel-title">Top Destinations</div>
           <div id="topRoutes"></div>
         </div>
       </div>
     </section>
 
-    <section>
-      <div class="section-head"><span class="section-num">01</span><h2>Start a ride request</h2></div>
-      <div class="panel">
-        <div class="presets-label">Frequent Routes</div>
-        <div class="presets-row">
-          <button type="button" class="preset-chip" onclick="applyPreset('Katpadi Railway Station')">Katpadi Station</button>
-          <button type="button" class="preset-chip" onclick="applyPreset('Chennai Airport (MAA)')">Chennai Airport</button>
-          <button type="button" class="preset-chip" onclick="applyPreset('New Bus Stand')">New Bus Stand</button>
-          <button type="button" class="preset-chip" onclick="applyPreset('Bengaluru Airport (BLR)')">BLR Airport</button>
-        </div>
-        <form id="createForm">
-          <div class="form-row">
-            <div class="field"><label>Destination</label><input type="text" id="destination" required placeholder="Airport Terminal 1"></div>
-            <div class="field"><label>Departure</label><input type="datetime-local" id="departureTime" required></div>
-          </div>
-          <div class="form-row">
-            <div class="field"><label>Seats needed</label><input type="number" id="totalSeats" required min="1" max="6" value="3"></div>
-            <div class="field"><label>Cost per seat (&#8377;)</label><input type="number" id="costPerSeat" required></div>
-          </div>
-          <div class="form-row">
-            <div class="field"><label>Your name</label><input type="text" id="hostName" required placeholder="Full name"></div>
-            <div class="field"><label>Your contact</label><input type="text" id="hostContact" required placeholder="+91 98765 43210"></div>
-          </div>
-          <button type="submit" class="btn-primary">Create request</button>
-          <div class="error-text" id="createError"></div>
-        </form>
-      </div>
-    </section>
+    <!-- ========================================================================= -->
+    <!-- VIEW A: GUEST / UNAUTHENTICATED USERS (Joining Process Guide + Gate)      -->
+    <!-- ========================================================================= -->
+    <div id="guestSection" style="display:none;">
 
-    <section>
-      <div class="section-head" id="joinSection"><span class="section-num">02</span><h2>Join with a code</h2></div>
-      <div class="panel">
-        <div class="join-row">
-          <div class="field code-field" style="max-width:160px;"><label>Group code</label><input type="text" id="joinCode" maxlength="6" placeholder="ABC123"></div>
-          <div class="field" style="max-width:220px;"><label>Your name</label><input type="text" id="joinName" placeholder="Full name"></div>
-          <div class="field" style="max-width:220px;"><label>Your contact</label><input type="text" id="joinContact" placeholder="+91 98765 43210"></div>
-          <button id="joinBtn" class="btn-outline">Join group</button>
+      <!-- Joining & Hosting Process Guide -->
+      <section style="margin-bottom:40px;">
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">01</span>
+          <h2 style="font-size:18px; margin:0;">The Carpooling Process</h2>
         </div>
-        <div class="error-text" id="joinError"></div>
-      </div>
-    </section>
+        <div class="grid-3" style="margin-bottom:20px;">
+          <div class="process-card">
+            <div class="step-num-badge">1</div>
+            <h3 style="font-size:15px; margin-bottom:6px;">Browse or Propose Route</h3>
+            <p style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:12px;">
+              Choose frequent campus routes with predetermined departure times and passenger capacities.
+            </p>
+            <div class="presets-row" style="margin-bottom:0;">
+              <button type="button" class="preset-chip" onclick="promptLoginModal('create a ride to Katpadi Station')">Katpadi Station</button>
+              <button type="button" class="preset-chip" onclick="promptLoginModal('create a ride to Chennai Airport')">Chennai Airport</button>
+            </div>
+          </div>
 
-    <section>
-      <div class="section-head" style="margin-bottom:0;"><span class="section-num">03</span><h2>Active requests</h2></div>
-      <div class="filter-bar">
-        <div class="filter-tabs">
-          <div class="filter-tab active" onclick="setFilter('ALL',this)">All</div>
-          <div class="filter-tab" onclick="setFilter('FORMING',this)">Forming</div>
-          <div class="filter-tab" onclick="setFilter('PENDING_DRIVER',this)">Awaiting Driver</div>
-          <div class="filter-tab" onclick="setFilter('CONFIRMED',this)">Confirmed</div>
-        </div>
-        <div class="search-box">
-          <input type="text" id="boardSearch" placeholder="Search destination or code..." oninput="handleSearch()">
-        </div>
-      </div>
-      <div class="board" id="groupsList"><div class="empty-state">Loading requests&#x2026;</div></div>
-    </section>
+          <div class="process-card">
+            <div class="step-num-badge">2</div>
+            <h3 style="font-size:15px; margin-bottom:6px;">Lock Seats with Concurrency</h3>
+            <p style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:12px;">
+              Share your private 6-character group code with classmates. Seats are claimed atomically with zero overbooking.
+            </p>
+            <span class="tag tag-indigo" style="font-size:11px;">Private Passcodes & QR Join</span>
+          </div>
 
-    <footer>Campus Carpool &#x2014; coordination board for student ride sharing.</footer>
+          <div class="process-card">
+            <div class="step-num-badge">3</div>
+            <h3 style="font-size:15px; margin-bottom:6px;">Verified Driver Confirmation</h3>
+            <p style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:12px;">
+              Once full, campus-verified drivers accept the trip. Direct WhatsApp and call links unlock for coordinated pickup.
+            </p>
+            <span class="tag tag-sage" style="font-size:11px;">Transport Admin Verified</span>
+          </div>
+        </div>
+
+        <div class="panel" style="background:var(--indigo-soft); border-color:#d4dae8; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h3 style="color:var(--indigo); margin-bottom:4px; font-size:16px;">Sign in to view live departures and start carpooling</h3>
+            <p style="font-size:13px; color:var(--ink-soft); margin:0;">
+              Registration takes 10 seconds. Passwords are securely hashed with bcrypt.
+            </p>
+          </div>
+          <a href="profile.html" class="btn btn-primary">Sign In / Register &rarr;</a>
+        </div>
+      </section>
+
+      <!-- Locked Active Requests Gate -->
+      <section style="margin-bottom:50px;">
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">02</span>
+          <h2 style="font-size:18px; margin:0;">Active Carpools</h2>
+        </div>
+        <div class="panel" style="text-align:center; padding:44px 20px;">
+          <div style="font-size:28px; margin-bottom:8px;">🔒</div>
+          <h3 style="font-size:17px; margin-bottom:6px;">Active Ride Board is Protected</h3>
+          <p style="font-size:13.5px; color:var(--ink-soft); max-width:540px; margin:0 auto 20px; line-height:1.6;">
+            To protect student travel itineraries from unverified viewers and comply with the India DPDP Act, active departure lists are restricted to authenticated members.
+          </p>
+          <a href="profile.html" class="btn btn-primary" style="padding:10px 24px;">Sign In to Unlock Live Rides</a>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW B: AUTHENTICATED USERS (Create Form, Join by Code, & Active Board)   -->
+    <!-- ========================================================================= -->
+    <div id="authSection" style="display:none;">
+
+      <!-- 1. Start a Ride Request Form -->
+      <section style="margin-bottom:40px;">
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">01</span>
+          <h2 style="font-size:18px; margin:0;">Start a Ride Request</h2>
+        </div>
+        <div class="panel">
+          <div class="presets-label">Quick Route Presets</div>
+          <div class="presets-row">
+            <button type="button" class="preset-chip" onclick="applyPreset('Katpadi Railway Station')">Katpadi Station</button>
+            <button type="button" class="preset-chip" onclick="applyPreset('Chennai Airport (MAA)')">Chennai Airport</button>
+            <button type="button" class="preset-chip" onclick="applyPreset('New Bus Stand')">New Bus Stand</button>
+            <button type="button" class="preset-chip" onclick="applyPreset('Bengaluru Airport (BLR)')">BLR Airport</button>
+          </div>
+          <form id="createForm">
+            <div class="form-row">
+              <div class="field"><label>Destination</label><input type="text" id="destination" required placeholder="e.g., Katpadi Railway Station"></div>
+              <div class="field"><label>Departure Time</label><input type="datetime-local" id="departureTime" required></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Total Seats</label><input type="number" id="totalSeats" required min="1" max="6" value="3"></div>
+              <div class="field"><label>Fare per Seat (₹)</label><input type="number" id="costPerSeat" required placeholder="e.g., 60"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Host Name (Verified Account)</label><input type="text" id="hostName" required readonly style="background:#f0efe9; cursor:not-allowed;"></div>
+              <div class="field"><label>Host Phone (Verified Account)</label><input type="text" id="hostContact" required readonly style="background:#f0efe9; cursor:not-allowed;"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Ride Request</button>
+            <div class="error-text" id="createError"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- 2. Join with Code Form -->
+      <section style="margin-bottom:40px;">
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:14px;" id="joinSection">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">02</span>
+          <h2 style="font-size:18px; margin:0;">Join with a Group Code</h2>
+        </div>
+        <div class="panel">
+          <div class="join-row" style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="field code-field" style="max-width:180px; margin-bottom:0;">
+              <label>6-Char Code</label>
+              <input type="text" id="joinCode" maxlength="6" placeholder="ABC123" style="text-transform:uppercase; font-family:'IBM Plex Mono',monospace; letter-spacing:2px; font-weight:600; text-align:center;">
+            </div>
+            <div class="field" style="max-width:200px; margin-bottom:0;">
+              <label>Your Name</label>
+              <input type="text" id="joinName" readonly style="background:#f0efe9; cursor:not-allowed;">
+            </div>
+            <div class="field" style="max-width:200px; margin-bottom:0;">
+              <label>Your Contact</label>
+              <input type="text" id="joinContact" readonly style="background:#f0efe9; cursor:not-allowed;">
+            </div>
+            <button id="joinBtn" class="btn btn-outline" style="height:42px;">Join Group</button>
+          </div>
+          <div class="error-text" id="joinError"></div>
+        </div>
+      </section>
+
+      <!-- 3. Active Requests Board -->
+      <section style="margin-bottom:50px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div style="display:flex; align-items:baseline; gap:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);">03</span>
+            <h2 style="font-size:18px; margin:0;">Active Campus Carpools</h2>
+          </div>
+          <button onclick="loadGroups()" class="btn btn-outline" style="font-size:12px; padding:4px 10px;">Refresh</button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-tabs">
+            <div class="filter-tab active" onclick="setFilter('ALL',this)">All</div>
+            <div class="filter-tab" onclick="setFilter('FORMING',this)">Forming</div>
+            <div class="filter-tab" onclick="setFilter('PENDING_DRIVER',this)">Awaiting Driver</div>
+            <div class="filter-tab" onclick="setFilter('CONFIRMED',this)">Confirmed</div>
+          </div>
+          <div class="search-box">
+            <input type="text" id="boardSearch" placeholder="Search destination or code..." oninput="handleSearch()">
+          </div>
+        </div>
+        <div class="board" id="groupsList"><div class="empty-state">Loading active carpools...</div></div>
+      </section>
+
+    </div>
+
   </div>
 
-  <script>
-    const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const BACKEND_URL = isLocal ? 'http://localhost:5001' : 'https://vit-carpool-backend.onrender.com';
-    const API_URL = BACKEND_URL + '/api';
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>Campus Carpool Hub — VIT Vellore Transport Coordination</div>
+      <div>Multi-Factor Protected & DPDP Compliant</div>
+    </div>
+  </footer>
 
+  <script src="nav.js"></script>
+  <script>
     let cachedGroups = [];
     let currentFilter = 'ALL';
     let currentSearch = '';
+
+    function checkAuthState() {
+      const auth = getAuth();
+      const guestSec = document.getElementById('guestSection');
+      const authSec = document.getElementById('authSection');
+      const heroCta = document.getElementById('heroAuthCta');
+
+      if (auth && auth.user) {
+        guestSec.style.display = 'none';
+        authSec.style.display = 'block';
+
+        // Pre-fill user details
+        document.getElementById('hostName').value = auth.user.name;
+        document.getElementById('hostContact').value = auth.user.phone;
+        document.getElementById('joinName').value = auth.user.name;
+        document.getElementById('joinContact').value = auth.user.phone;
+
+        heroCta.innerHTML = `
+          <div style="text-align:right;">
+            <span class="tag tag-sage" style="margin-bottom:4px;">Signed in as ${auth.user.name}</span>
+            <div><a href="my-rides.html" class="btn btn-outline" style="font-size:12px; padding:4px 10px;">View My Bookings &rarr;</a></div>
+          </div>
+        `;
+        loadGroups();
+      } else {
+        guestSec.style.display = 'block';
+        authSec.style.display = 'none';
+        heroCta.innerHTML = `
+          <a href="profile.html" class="btn btn-primary" style="padding:10px 18px;">Sign In to Carpool &rarr;</a>
+        `;
+      }
+    }
 
     // Auto-fill join code from QR deep-link URL parameter
     (function() {
@@ -232,269 +337,439 @@
       const codeParam = urlParams.get('code');
       if (codeParam) {
         window.addEventListener('DOMContentLoaded', function() {
-          document.getElementById('joinCode').value = codeParam.toUpperCase();
-          setTimeout(function() {
-            var sec = document.getElementById('joinSection');
-            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            document.getElementById('joinName').focus();
-          }, 400);
+          const auth = getAuth();
+          if (auth && auth.user) {
+            document.getElementById('joinCode').value = codeParam.toUpperCase();
+            setTimeout(function() {
+              const sec = document.getElementById('joinSection');
+              if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 400);
+          } else {
+            promptLoginModal('join ride code ' + codeParam.toUpperCase());
+          }
         });
       }
     })();
 
     function setFilter(filterType, el) {
-      document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
       el.classList.add('active');
       currentFilter = filterType;
       renderGroups();
     }
+
     function handleSearch() {
       currentSearch = document.getElementById('boardSearch').value.toLowerCase().trim();
       renderGroups();
     }
 
     function applyPreset(dest) {
+      const auth = getAuth();
+      if (!auth || !auth.user) {
+        promptLoginModal('create a ride to ' + dest);
+        return;
+      }
       document.getElementById('destination').value = dest;
-      var d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       document.getElementById('departureTime').value = d.toISOString().slice(0, 16);
       showToast('Selected route: ' + dest);
     }
 
-    function showToast(message, type) {
-      var old = document.querySelector('.toast');
-      if (old) old.remove();
-      var toast = document.createElement('div');
-      toast.className = 'toast' + (type === 'error' ? ' toast-error' : '');
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      requestAnimationFrame(function() { requestAnimationFrame(function() { toast.classList.add('toast-show'); }); });
-      setTimeout(function() { toast.classList.remove('toast-show'); setTimeout(function() { toast.remove(); }, 200); }, 3000);
-    }
-
     function showConfirm(title, message) {
       return new Promise(function(resolve) {
-        var overlay = document.createElement('div');
+        const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
-        overlay.innerHTML = '<div class="modal-box"><p class="modal-title">' + title + '</p><p class="modal-body">' + message + '</p><div class="modal-actions"><button class="btn-outline" id="modalCancel">Cancel</button><button class="btn-primary" id="modalConfirm" style="background:var(--brick);">Confirm</button></div></div>';
+        overlay.style.cssText = 'position:fixed; inset:0; background:rgba(28,28,30,.45); display:flex; align-items:center; justify-content:center; z-index:200;';
+        overlay.innerHTML = `
+          <div class="panel" style="max-width:420px; width:calc(100% - 48px); margin:0;">
+            <p style="font-family:'Source Serif 4',serif; font-weight:600; font-size:18px; margin:0 0 8px;">${title}</p>
+            <p style="font-size:14px; color:var(--ink-soft); margin:0 0 24px; line-height:1.6;">${message}</p>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button class="btn btn-outline" id="modalCancel">Cancel</button>
+              <button class="btn btn-danger" id="modalConfirm">Confirm</button>
+            </div>
+          </div>
+        `;
         document.body.appendChild(overlay);
-        requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('modal-show'); }); });
-        function close(result) { overlay.classList.remove('modal-show'); setTimeout(function() { overlay.remove(); }, 150); resolve(result); }
-        overlay.querySelector('#modalCancel').addEventListener('click', function() { close(false); });
-        overlay.querySelector('#modalConfirm').addEventListener('click', function() { close(true); });
-        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(false); });
+        function close(result) { overlay.remove(); resolve(result); }
+        overlay.querySelector('#modalCancel').addEventListener('click', () => close(false));
+        overlay.querySelector('#modalConfirm').addEventListener('click', () => close(true));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
       });
     }
 
     function showSuccessModal(groupCode) {
-      var joinUrl = window.location.href.split('?')[0] + '?code=' + groupCode;
-      var overlay = document.createElement('div');
+      const joinUrl = window.location.href.split('?')[0] + '?code=' + groupCode;
+      const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
-      overlay.innerHTML = '<div class="modal-box" style="max-width:480px;"><p class="modal-title" style="color:var(--sage);margin-bottom:4px;">&#x2713; Ride request created</p><p class="modal-body" style="margin-bottom:20px;">Share with classmates so they can join your group.</p><div class="success-grid"><canvas id="qrCanvas"></canvas><div><div class="success-code-label">Group code</div><div class="success-code">' + groupCode + '</div><button class="btn-outline" id="copyBtn" style="width:100%;">Copy code</button><div class="success-code-label" style="margin-top:10px;">or scan the QR to auto-join</div></div></div><div class="modal-actions"><button class="btn-primary" id="successDone">Done</button></div></div>';
+      overlay.style.cssText = 'position:fixed; inset:0; background:rgba(28,28,30,.45); display:flex; align-items:center; justify-content:center; z-index:200;';
+      overlay.innerHTML = `
+        <div class="panel" style="max-width:480px; width:calc(100% - 48px); margin:0;">
+          <p style="font-family:'Source Serif 4',serif; font-weight:600; font-size:18px; color:var(--sage); margin:0 0 4px;">&#x2713; Ride request created</p>
+          <p style="font-size:14px; color:var(--ink-soft); margin-bottom:20px;">Share with classmates so they can join your group.</p>
+          <div style="display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:center; margin-bottom:24px;">
+            <canvas id="qrCanvas"></canvas>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;">Group code</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; letter-spacing:4px; color:var(--indigo); margin-bottom:12px;">${groupCode}</div>
+              <button class="btn btn-outline" id="copyBtn" style="width:100%; font-size:12px; padding:6px 12px;">Copy Code</button>
+              <div style="font-size:11px; color:var(--ink-soft); margin-top:8px;">or scan the QR to auto-join</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-primary" id="successDone">Done</button>
+          </div>
+        </div>
+      `;
       document.body.appendChild(overlay);
-      requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('modal-show'); }); });
       try { QRCode.toCanvas(document.getElementById('qrCanvas'), joinUrl, { width: 130, margin: 1 }); } catch(e) {}
       overlay.querySelector('#copyBtn').addEventListener('click', function() {
         navigator.clipboard.writeText(groupCode).then(function() {
-          var btn = overlay.querySelector('#copyBtn'); btn.textContent = '\u2713 Copied!';
-          setTimeout(function() { btn.textContent = 'Copy code'; }, 2000);
+          const btn = overlay.querySelector('#copyBtn');
+          btn.textContent = '✓ Copied!';
+          setTimeout(() => btn.textContent = 'Copy Code', 2000);
         });
       });
-      function close() { overlay.classList.remove('modal-show'); setTimeout(function() { overlay.remove(); }, 150); }
+      function close() { overlay.remove(); }
       overlay.querySelector('#successDone').addEventListener('click', close);
-      overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     }
 
-    var socket = io(BACKEND_URL);
-    socket.on('groups:changed', function() { loadGroups(); loadStats(); });
+    const socket = io(BACKEND_URL);
+    socket.on('groups:changed', function() {
+      loadStats();
+      if (getAuth()) loadGroups();
+    });
 
     async function loadStats() {
       try {
-        var res = await fetch(API_URL + '/groups/stats');
+        const res = await fetch(API_URL + '/groups/stats');
         if (!res.ok) return;
-        var data = await res.json();
-        var overall = data.overall || {};
-        var byStatus = data.byStatus || [];
-        var byDestination = data.byDestination || [];
-        var recentCount = data.recentCount || 0;
-        document.getElementById('statTotalRides').textContent = overall.totalRides != null ? overall.totalRides : 0;
-        var pct = overall.totalSeatsOffered ? Math.round((overall.totalSeatsFilled / overall.totalSeatsOffered) * 100) : 0;
-        document.getElementById('statOccupancy').textContent = pct + '%';
-        document.getElementById('statAvgCost').textContent = overall.avgCostPerSeat ? '\u20b9' + Math.round(overall.avgCostPerSeat) : '\u2014';
-        document.getElementById('statRecent').textContent = recentCount;
-        renderStatusBar(byStatus, overall.totalRides || 0);
-        renderTopRoutes(byDestination);
-      } catch(e) { console.error(e); }
-    }
+        const data = await res.json();
+        const overall = data.overall || {};
+        const byStatus = data.byStatus || [];
+        const byDestination = data.byDestination || [];
+        const recentCount = data.recentCount || 0;
 
-    function renderStatusBar(byStatus, total) {
-      var STATUSES = { FORMING:{color:'#B8863B',label:'Forming'}, PENDING_DRIVER:{color:'#2B3A67',label:'Awaiting driver'}, CONFIRMED:{color:'#5F7F63',label:'Confirmed'}, EXPIRED:{color:'#B7B5AC',label:'Expired'}, CANCELLED:{color:'#D0CEC8',label:'Cancelled'} };
-      var track = document.getElementById('statusBarTrack'); var legend = document.getElementById('statusLegend');
-      if (!track || !legend || total === 0) return;
-      track.innerHTML = ''; legend.innerHTML = '';
-      for (var key in STATUSES) {
-        var meta = STATUSES[key];
-        var found = byStatus.find(function(s) { return s._id === key; });
-        var count = found ? found.count : 0;
-        if (count === 0) continue;
-        var pct = ((count / total) * 100).toFixed(1);
-        track.innerHTML += '<div class="status-bar-segment" style="width:' + pct + '%;background:' + meta.color + '" title="' + meta.label + ': ' + count + '"></div>';
-        legend.innerHTML += '<div class="legend-item"><span class="legend-dot" style="background:' + meta.color + '"></span>' + meta.label + ' ' + count + '</div>';
+        document.getElementById('statTotalRides').textContent = overall.totalRides != null ? overall.totalRides : 0;
+        const offered = overall.totalSeatsOffered || 0;
+        const filled = overall.totalSeatsFilled || 0;
+        document.getElementById('statOccupancy').textContent = offered > 0 ? Math.round((filled / offered) * 100) + '%' : '—';
+        document.getElementById('statAvgCost').textContent = overall.avgCostPerSeat ? '₹' + Math.round(overall.avgCostPerSeat) : '—';
+        document.getElementById('statRecent').textContent = recentCount;
+
+        renderStatusBar(byStatus);
+        renderTopRoutes(byDestination);
+      } catch(err) {
+        console.error('Stats load error', err);
       }
     }
 
-    function renderTopRoutes(byDestination) {
-      var el = document.getElementById('topRoutes');
-      if (!el) return;
-      if (!byDestination || !byDestination.length) { el.innerHTML = '<div style="color:var(--ink-soft);font-size:13px;">No routes yet.</div>'; return; }
-      var top = byDestination.slice(0, 5);
-      var max = top[0].rides;
-      el.innerHTML = top.map(function(d) {
-        return '<div class="route-row"><div class="route-row-top"><span class="route-name">' + d._id + '</span><span class="route-count">' + d.rides + ' ride' + (d.rides !== 1 ? 's' : '') + '</span></div><div class="route-bar-track"><div class="route-bar-fill" style="width:' + (d.rides / max * 100).toFixed(1) + '%"></div></div></div>';
+    function renderStatusBar(byStatus) {
+      const track = document.getElementById('statusBarTrack');
+      const legend = document.getElementById('statusLegend');
+      const total = byStatus.reduce((acc, cur) => acc + cur.count, 0);
+      if (total === 0) {
+        track.innerHTML = '<div style="background:#ddd;width:100%;height:100%;"></div>';
+        legend.innerHTML = '<span class="legend-item">No active data</span>';
+        return;
+      }
+      const colors = { FORMING: '#B8863B', PENDING_DRIVER: '#2B3A67', CONFIRMED: '#5F7F63', EXPIRED: '#B7B5AC', CANCELLED: '#A6402F' };
+      track.innerHTML = byStatus.map(s => {
+        const pct = (s.count / total) * 100;
+        return `<div class="status-bar-segment" style="width:${pct}%;background:${colors[s._id] || '#888'};"></div>`;
       }).join('');
+      legend.innerHTML = byStatus.map(s => `
+        <span class="legend-item"><span class="legend-dot" style="background:${colors[s._id] || '#888'};"></span>${s._id}: ${s.count}</span>
+      `).join('');
     }
 
-    var TOKENS_KEY = 'carpool_member_tokens';
-    var HOSTS_KEY = 'carpool_host_groups';
-    function getStoredTokens() { return JSON.parse(localStorage.getItem(TOKENS_KEY) || '{}'); }
-    function saveMemberToken(gid, tok) { var t = getStoredTokens(); t[gid] = tok; localStorage.setItem(TOKENS_KEY, JSON.stringify(t)); }
-    function getMemberToken(gid) { return getStoredTokens()[gid] || null; }
-    function removeMemberToken(gid) { var t = getStoredTokens(); delete t[gid]; localStorage.setItem(TOKENS_KEY, JSON.stringify(t)); }
-    function saveIsHost(gid, v) { var h = JSON.parse(localStorage.getItem(HOSTS_KEY) || '{}'); h[gid] = v; localStorage.setItem(HOSTS_KEY, JSON.stringify(h)); }
-    function getIsHost(gid) { return JSON.parse(localStorage.getItem(HOSTS_KEY) || '{}')[gid] === true; }
+    function renderTopRoutes(byDestination) {
+      const el = document.getElementById('topRoutes');
+      if (!byDestination || byDestination.length === 0) {
+        el.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">No destination data available.</div>';
+        return;
+      }
+      const top = byDestination.slice(0, 5);
+      const max = top[0].rides;
+      el.innerHTML = top.map(d => `
+        <div class="route-row">
+          <div class="route-row-top"><span class="route-name">${d._id}</span><span class="route-count">${d.rides} ride${d.rides !== 1 ? 's' : ''}</span></div>
+          <div class="route-bar-track"><div class="route-bar-fill" style="width:${(d.rides / max * 100).toFixed(1)}%;"></div></div>
+        </div>
+      `).join('');
+    }
 
-    function fmtTime(ds) { return new Date(ds).toLocaleString(undefined, {weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
-    function isUrgent(ds) { var ms = new Date(ds).getTime() - Date.now(); return ms > 0 && ms < 7200000; }
+    function fmtTime(ds) {
+      return new Date(ds).toLocaleString(undefined, {
+        weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+    }
+
     function countdownText(dl) {
-      var ms = new Date(dl).getTime() - Date.now();
+      const ms = new Date(dl).getTime() - Date.now();
       if (ms <= 0) return 'Window closed';
-      var m = Math.floor(ms / 60000); var s = Math.floor((ms % 60000) / 1000);
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
       return m + ':' + String(s).padStart(2, '0') + ' remaining to fill seats';
     }
+
     function statusMeta(status) {
-      var map = { FORMING:['dot-forming','status-forming','Forming'], PENDING_DRIVER:['dot-pending','status-pending','Driver requested'], CONFIRMED:['dot-confirmed','status-confirmed','Confirmed'], EXPIRED:['dot-inactive','status-inactive','Expired'], CANCELLED:['dot-inactive','status-inactive','Cancelled'] };
-      return map[status] || ['dot-inactive','status-inactive',status];
+      const map = {
+        FORMING: ['dot-forming', 'status-forming', 'Forming'],
+        PENDING_DRIVER: ['dot-pending', 'status-pending', 'Awaiting Driver'],
+        CONFIRMED: ['dot-confirmed', 'status-confirmed', 'Confirmed'],
+        EXPIRED: ['dot-inactive', 'status-inactive', 'Expired'],
+        CANCELLED: ['dot-inactive', 'status-inactive', 'Cancelled']
+      };
+      return map[status] || ['dot-inactive', 'status-inactive', status];
     }
 
     function renderGroups() {
-      var container = document.getElementById('groupsList');
-      var filtered = cachedGroups.filter(function(g) {
+      const container = document.getElementById('groupsList');
+      const auth = getAuth();
+      const userPhone = auth && auth.user ? auth.user.phone : '';
+
+      const filtered = cachedGroups.filter(g => {
         if (currentFilter === 'ALL' && !currentSearch && (g.status === 'EXPIRED' || g.status === 'CANCELLED')) return false;
         if (currentFilter !== 'ALL' && g.status !== currentFilter) return false;
         if (currentSearch) {
-          var s = currentSearch;
+          const s = currentSearch;
           return (g.origin || '').toLowerCase().includes(s) || g.destination.toLowerCase().includes(s) || g.groupCode.toLowerCase().includes(s);
         }
         return true;
       });
-      if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">No requests found for this filter.</div>'; return; }
-      container.innerHTML = filtered.map(function(g) {
-        var seatsFilled = g.members.length;
-        var sm = statusMeta(g.status);
-        var dotCls = sm[0]; var textCls = sm[1]; var label = sm[2];
-        var amMember = !!getMemberToken(g._id);
-        var amHost = getIsHost(g._id);
-        var isStep2 = g.status !== 'FORMING';
-        var isStep3 = g.status === 'CONFIRMED';
-        var stepperHtml = '<div class="stepper"><span class="status-confirmed">\u2713 Created</span><span class="step-line' + (isStep2 ? ' completed' : '') + '"></span><span class="' + (isStep2 ? 'status-confirmed' : (g.status === 'FORMING' ? 'status-forming' : '')) + '">' + (isStep2 ? '\u2713' : '2') + ' Seats Full</span><span class="step-line' + (isStep3 ? ' completed' : '') + '"></span><span class="' + (isStep3 ? 'status-confirmed' : (g.status === 'PENDING_DRIVER' ? 'status-pending' : '')) + '">' + (isStep3 ? '\u2713' : '3') + ' Driver Confirmed</span></div>';
-        var seatsHtml = '';
-        for (var i = 0; i < g.totalSeats; i++) {
-          var m = g.members[i];
-          if (m) seatsHtml += '<div class="seat-slot">' + m.name + (m.isHost ? '<span class="host-flag">Host</span>' : '') + '</div>';
-          else seatsHtml += '<div class="seat-slot empty">Open seat</div>';
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state">No carpools found for this filter.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(g => {
+        const seatsFilled = g.members.length;
+        const [dotCls, textCls, label] = statusMeta(g.status);
+        const amMember = g.members && g.members.some(m => m.contact === userPhone);
+        const hostMember = g.members && g.members.find(m => m.isHost);
+        const amHost = hostMember && hostMember.contact === userPhone;
+
+        const isStep2 = g.status !== 'FORMING';
+        const isStep3 = g.status === 'CONFIRMED';
+        const stepperHtml = `
+          <div class="stepper">
+            <span class="status-confirmed">✓ Created</span>
+            <span class="step-line ${isStep2 ? 'completed' : ''}"></span>
+            <span class="${isStep2 ? 'status-confirmed' : (g.status === 'FORMING' ? 'status-forming' : '')}">${isStep2 ? '✓' : '2'} Seats Full</span>
+            <span class="step-line ${isStep3 ? 'completed' : ''}"></span>
+            <span class="${isStep3 ? 'status-confirmed' : (g.status === 'PENDING_DRIVER' ? 'status-pending' : '')}">${isStep3 ? '✓' : '3'} Driver Confirmed</span>
+          </div>
+        `;
+
+        let seatsHtml = '';
+        for (let i = 0; i < g.totalSeats; i++) {
+          const m = g.members[i];
+          if (m) seatsHtml += `<div class="seat-slot">${m.name} ${m.isHost ? '<span class="host-flag">Host</span>' : ''}</div>`;
+          else seatsHtml += `<div class="seat-slot empty">Open seat</div>`;
         }
-        var membersHtml = g.members.map(function(m) { return '<li><span>' + m.name + (m.isHost ? '<span class="host-flag">Host</span>' : '') + '</span><span class="m-contact">' + m.contact + '</span></li>'; }).join('');
-        var driverBlock = g.status === 'CONFIRMED' ? '<div class="driver-block"><strong>Driver confirmed \u2014</strong> ' + g.driverName + ', ' + g.driverContact + '</div>' : '';
-        var countdownBlock = g.status === 'FORMING' ? '<div class="countdown" data-deadline="' + g.formingDeadline + '">' + countdownText(g.formingDeadline) + '</div>' : '';
-        var codeHtml = amMember ? 'Code ' + g.groupCode + '<span class="you-flag">You\'re in</span>' : '';
-        var urgencyHtml = isUrgent(g.departureTime) && (g.status === 'FORMING' || g.status === 'PENDING_DRIVER') ? '<span class="urgency-tag">(Departing soon)</span>' : '';
-        var canAct = ['FORMING','PENDING_DRIVER','CONFIRMED'].includes(g.status);
-        var actions = '';
-        if (canAct && amMember) {
-          actions = '<div class="row-actions">' + (!amHost ? '<button class="btn-danger-text" onclick="leaveGroup(\'' + g._id + '\')">Leave group</button>' : '<button class="btn-danger-text" onclick="cancelGroup(\'' + g._id + '\')">Cancel ride</button>') + '</div>';
+
+        const membersHtml = g.members.map(m => `
+          <li><span>${m.name} ${m.isHost ? '<span class="host-flag">Host</span>' : ''}</span><span class="m-contact">${m.contact}</span></li>
+        `).join('');
+
+        const driverBlock = g.status === 'CONFIRMED'
+          ? `<div class="driver-block"><strong>Driver confirmed —</strong> ${g.driverName}, ${g.driverContact}</div>`
+          : '';
+
+        const countdownBlock = g.status === 'FORMING'
+          ? `<div class="countdown" data-deadline="${g.formingDeadline}">${countdownText(g.formingDeadline)}</div>`
+          : '';
+
+        const codeHtml = amMember ? `Code ${g.groupCode}<span class="you-flag">You're in</span>` : '';
+
+        let actions = '';
+        if (amMember) {
+          actions = `
+            <div style="margin-top:14px; display:flex; gap:16px;">
+              ${amHost ? `<button class="btn-danger-text" onclick="cancelRideAuth('${g._id}')">Cancel ride (Host)</button>` : `<button class="btn-danger-text" onclick="leaveRide('${g._id}')">Leave ride</button>`}
+            </div>
+          `;
         }
-        return '<div class="row" data-id="' + g._id + '"><div class="row-top"><div><div class="route">' + (g.origin || 'VIT Vellore') + '<span class="arrow">&rarr;</span>' + g.destination + '</div><div class="meta-line"><span>' + fmtTime(g.departureTime) + '</span><span>&middot;</span><span>' + seatsFilled + '/' + g.totalSeats + ' seats</span><span>&middot;</span><span>\u20b9' + g.costPerSeat + ' per seat</span>' + urgencyHtml + '</div><div class="code-tag">' + codeHtml + '</div></div><div class="status-block"><span class="status ' + textCls + '"><span class="dot ' + dotCls + '"></span>' + label + '</span></div></div>' + stepperHtml + '<div class="seats-grid">' + seatsHtml + '</div>' + countdownBlock + '<div class="members-block"><div class="members-label">Group members</div><ul class="member-list">' + membersHtml + '</ul></div>' + driverBlock + actions + '</div>';
+
+        return `
+          <div class="row" data-id="${g._id}">
+            <div class="row-top">
+              <div>
+                <div class="route">${g.origin || 'Campus Main Gate'}<span class="arrow">&rarr;</span>${g.destination}</div>
+                <div class="meta-line">
+                  <span>${fmtTime(g.departureTime)}</span><span>&middot;</span>
+                  <span>${seatsFilled}/${g.totalSeats} seats</span><span>&middot;</span>
+                  <span>₹${g.costPerSeat} per seat</span>
+                </div>
+                <div class="code-tag">${codeHtml}</div>
+              </div>
+              <div class="status-block">
+                <span class="status ${textCls}"><span class="dot ${dotCls}"></span>${label}</span>
+              </div>
+            </div>
+            ${stepperHtml}
+            <div class="seats-grid">${seatsHtml}</div>
+            ${countdownBlock}
+            <div class="members-block">
+              <div class="members-label">Group Members</div>
+              <ul class="member-list">${membersHtml}</ul>
+            </div>
+            ${driverBlock}
+            ${actions}
+          </div>
+        `;
       }).join('');
     }
 
     async function loadGroups() {
+      const auth = getAuth();
+      if (!auth || !auth.token) return;
+
       try {
-        var res = await fetch(API_URL + '/groups');
-        if (!res.ok) throw new Error('Server responded with ' + res.status);
+        const res = await fetch(API_URL + '/groups', {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        if (res.status === 401) {
+          clearAuth();
+          checkAuthState();
+          return;
+        }
+        if (!res.ok) throw new Error('Server returned ' + res.status);
         cachedGroups = await res.json();
         renderGroups();
       } catch(err) {
-        document.getElementById('groupsList').innerHTML = '<div class="empty-state error-text">Could not reach the server. ' + err.message + '</div>';
+        document.getElementById('groupsList').innerHTML = `<div class="empty-state error-text">Could not load active carpools. ${err.message}</div>`;
       }
     }
 
-    setInterval(function() {
-      document.querySelectorAll('.countdown').forEach(function(el) { el.textContent = countdownText(el.dataset.deadline); });
+    setInterval(() => {
+      document.querySelectorAll('.countdown').forEach(el => {
+        el.textContent = countdownText(el.dataset.deadline);
+      });
     }, 1000);
 
+    // Form: Create a Ride
     document.getElementById('createForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      var errorEl = document.getElementById('createError'); errorEl.textContent = '';
-      var payload = { destination: document.getElementById('destination').value, departureTime: document.getElementById('departureTime').value, totalSeats: Number(document.getElementById('totalSeats').value), costPerSeat: Number(document.getElementById('costPerSeat').value), hostName: document.getElementById('hostName').value, hostContact: document.getElementById('hostContact').value };
+      const auth = getAuth();
+      if (!auth || !auth.token) {
+        promptLoginModal('create a ride');
+        return;
+      }
+
+      const errEl = document.getElementById('createError');
+      errEl.textContent = '';
+      const payload = {
+        destination: document.getElementById('destination').value.trim(),
+        departureTime: document.getElementById('departureTime').value,
+        totalSeats: Number(document.getElementById('totalSeats').value),
+        costPerSeat: Number(document.getElementById('costPerSeat').value)
+      };
+
       try {
-        var res = await fetch(API_URL + '/groups', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        var data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Could not create request.'; return; }
-        saveMemberToken(data.group._id, data.memberToken); saveIsHost(data.group._id, true);
-        document.getElementById('createForm').reset();
+        const res = await fetch(API_URL + '/groups', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + auth.token
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Failed to create ride';
+          return;
+        }
+
+        document.getElementById('destination').value = '';
         showSuccessModal(data.group.groupCode);
-        loadGroups(); loadStats();
-      } catch(err) { errorEl.textContent = 'Network error: ' + err.message; }
+        loadGroups();
+        loadStats();
+      } catch(err) {
+        errEl.textContent = 'Network error: ' + err.message;
+      }
     });
 
+    // Form: Join Group with Code
     document.getElementById('joinBtn').addEventListener('click', async function() {
-      var errorEl = document.getElementById('joinError'); errorEl.textContent = '';
-      var code = document.getElementById('joinCode').value.trim().toUpperCase();
-      var name = document.getElementById('joinName').value.trim();
-      var contact = document.getElementById('joinContact').value.trim();
-      if (!code || !name || !contact) { errorEl.textContent = 'Enter code, name, and contact.'; return; }
+      const auth = getAuth();
+      if (!auth || !auth.token) {
+        promptLoginModal('join a group');
+        return;
+      }
+
+      const errEl = document.getElementById('joinError');
+      errEl.textContent = '';
+      const code = document.getElementById('joinCode').value.trim().toUpperCase();
+      if (!code) {
+        errEl.textContent = 'Please enter the 6-character group code.';
+        return;
+      }
+
       try {
-        var lRes = await fetch(API_URL + '/groups/code/' + code);
-        var lData = await lRes.json();
-        if (!lRes.ok) { errorEl.textContent = lData.error || 'Group not found.'; return; }
-        var jRes = await fetch(API_URL + '/groups/' + lData._id + '/join', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name,contact:contact}) });
-        var jData = await jRes.json();
-        if (!jRes.ok) { errorEl.textContent = jData.error || 'Could not join.'; return; }
-        saveMemberToken(lData._id, jData.memberToken); saveIsHost(lData._id, false);
-        document.getElementById('joinCode').value = ''; document.getElementById('joinName').value = ''; document.getElementById('joinContact').value = '';
-        showToast('Joined group successfully!');
-        loadGroups(); loadStats();
-      } catch(err) { errorEl.textContent = 'Network error: ' + err.message; }
+        const lRes = await fetch(API_URL + '/groups/code/' + code, {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        const lData = await lRes.json();
+        if (!lRes.ok) {
+          errEl.textContent = lData.error || 'Group not found.';
+          return;
+        }
+
+        const jRes = await fetch(API_URL + '/groups/' + lData._id + '/join', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + auth.token
+          },
+          body: JSON.stringify({})
+        });
+        const jData = await jRes.json();
+        if (!jRes.ok) {
+          errEl.textContent = jData.error || 'Could not join ride.';
+          return;
+        }
+
+        document.getElementById('joinCode').value = '';
+        showToast('Joined carpool successfully!');
+        loadGroups();
+        loadStats();
+      } catch(err) {
+        errEl.textContent = 'Network error: ' + err.message;
+      }
     });
 
-    async function leaveGroup(groupId) {
-      var memberToken = getMemberToken(groupId);
-      if (!memberToken) { alert('No membership found.'); return; }
-      var ok = await showConfirm('Leave ride group?', 'You can rejoin later using the group code, as long as there\u2019s still a seat.');
+    async function cancelRideAuth(groupId) {
+      const auth = getAuth();
+      const ok = await showConfirm('Cancel this ride?', 'This will cancel the carpool for all members.');
       if (!ok) return;
+
       try {
-        var res = await fetch(API_URL + '/groups/' + groupId + '/members/me', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({memberToken:memberToken}) });
-        var data = await res.json();
-        if (!res.ok) { showToast(data.error || 'Could not leave.', 'error'); return; }
-        removeMemberToken(groupId); showToast('Left group successfully.'); loadGroups(); loadStats();
-      } catch(err) { showToast('Network error: ' + err.message, 'error'); }
+        const res = await fetch(API_URL + '/groups/' + groupId + '/cancel-auth', {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast('Ride cancelled');
+          loadGroups();
+          loadStats();
+        } else {
+          showToast(data.error || 'Failed to cancel', true);
+        }
+      } catch(err) {
+        showToast('Network error: ' + err.message, true);
+      }
     }
 
-    async function cancelGroup(groupId) {
-      var memberToken = getMemberToken(groupId);
-      if (!memberToken) { alert('No host membership found.'); return; }
-      var ok = await showConfirm('Cancel this ride?', 'This will cancel the ride for the entire group and cannot be undone.');
-      if (!ok) return;
-      try {
-        var res = await fetch(API_URL + '/groups/' + groupId + '/cancel', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({memberToken:memberToken}) });
-        var data = await res.json();
-        if (!res.ok) { showToast(data.error || 'Could not cancel.', 'error'); return; }
-        removeMemberToken(groupId); showToast('Group cancelled.'); loadGroups(); loadStats();
-      } catch(err) { showToast('Network error: ' + err.message, 'error'); }
-    }
-
-    loadStats();
-    loadGroups();
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuthState();
+      loadStats();
+    });
   </script>
 </body>
 </html>

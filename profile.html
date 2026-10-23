@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile & Security — Campus Carpool</title>
+  <link rel="stylesheet" href="common.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav id="mainNavbar" class="navbar"></nav>
+
+  <!-- Hero Header -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Identity & Access Management</div>
+      <h1>Account & Security Hub</h1>
+      <p class="lead">
+        Manage your campus credentials, Role-Based Access (Student / Driver / Admin), and Multi-Factor Authentication (TOTP).
+      </p>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-bottom: 60px;">
+
+    <!-- Unauthenticated View: Auth Cards -->
+    <div id="authSection" class="grid-2">
+
+      <!-- Registration Panel -->
+      <div class="panel">
+        <h2>Register Account</h2>
+        <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">
+          Choose your role. Passwords are automatically hashed with salted bcrypt.
+        </p>
+        <form id="registerForm">
+          <div class="field">
+            <label for="regName">Full Name</label>
+            <input type="text" id="regName" placeholder="e.g., Lokesh G." required>
+          </div>
+          <div class="field">
+            <label for="regPhone">Phone Number / Student ID</label>
+            <input type="text" id="regPhone" placeholder="e.g., +91 9876543210" required>
+          </div>
+          <div class="field">
+            <label for="regRole">Account Role</label>
+            <select id="regRole" required>
+              <option value="STUDENT">Student (Book & Create Rides)</option>
+              <option value="DRIVER">Cab Driver (Claim & Complete Trips)</option>
+              <option value="ADMIN">Campus Transport Admin</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="regPassword">Password</label>
+            <input type="password" id="regPassword" placeholder="Minimum 6 characters" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Create Account</button>
+          <div id="regError" style="color:var(--brick); font-size:12.5px; margin-top:10px;"></div>
+        </form>
+      </div>
+
+      <!-- Login Panel -->
+      <div class="panel">
+        <h2>Sign In</h2>
+        <p style="font-size:13px; color:var(--ink-soft); margin-bottom:18px;">
+          Enter your registered credentials to access your rides and permissions.
+        </p>
+        <form id="loginForm">
+          <div class="field">
+            <label for="loginPhone">Phone Number</label>
+            <input type="text" id="loginPhone" placeholder="e.g., +91 9876543210" required>
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" placeholder="Your password" required>
+          </div>
+
+          <!-- MFA 6-digit Code input (reveals if account has MFA) -->
+          <div class="field" id="mfaStep" style="display:none; background:var(--indigo-soft); padding:12px; border-radius:4px; border:1px solid #d4dae8;">
+            <label for="loginTotp" style="color:var(--indigo); font-weight:600;">
+              Enter 6-Digit Authenticator Code (TOTP)
+            </label>
+            <input type="text" id="loginTotp" placeholder="123456" maxlength="6" style="letter-spacing:4px; font-weight:600; text-align:center; font-family:'IBM Plex Mono', monospace;">
+            <p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">
+              Open Google Authenticator or Microsoft Authenticator on your phone.
+            </p>
+          </div>
+
+          <button type="submit" id="loginBtn" class="btn btn-primary" style="width:100%;">Sign In</button>
+          <div id="loginError" style="color:var(--brick); font-size:12.5px; margin-top:10px;"></div>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- Authenticated View: Profile Dashboard -->
+    <div id="profileSection" style="display:none;">
+
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div class="eyebrow">Authenticated Profile</div>
+            <h2 id="profName" style="margin-bottom:6px;">User Name</h2>
+            <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+              <span id="profRoleBadge" class="tag tag-indigo">STUDENT</span>
+              <span id="profVerifyBadge" class="tag tag-sage">VERIFIED</span>
+              <span id="profPhone" style="font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-soft);">+91 9876543210</span>
+            </div>
+          </div>
+          <div>
+            <button onclick="logoutUser()" class="btn btn-outline">Log Out</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security / MFA Settings Card -->
+      <div class="panel">
+        <h2>Multi-Factor Authentication (TOTP)</h2>
+        <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:18px; line-height:1.6;">
+          Add a second layer of security by requiring a 6-digit verification code from Google Authenticator or Microsoft Authenticator every time you sign in.
+        </p>
+
+        <div id="mfaInactiveView">
+          <button id="setupMfaBtn" class="btn btn-sage" onclick="startMfaSetup()">
+            Set Up Google / Microsoft Authenticator
+          </button>
+        </div>
+
+        <div id="mfaSetupView" style="display:none; margin-top:20px; border-top:1px dashed var(--line); padding-top:20px;">
+          <h3 style="font-size:15px; margin-bottom:12px;">Step 1: Scan this QR Code</h3>
+          <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+            <canvas id="mfaQrCanvas" style="border:1px solid var(--line); padding:6px; background:#fff; border-radius:4px;"></canvas>
+            <div>
+              <div style="font-size:12px; color:var(--ink-soft); margin-bottom:4px;">Secret Key (if scanning is unavailable):</div>
+              <code id="mfaSecretText" style="font-family:'IBM Plex Mono', monospace; font-size:14px; background:var(--paper); padding:6px 10px; border-radius:3px; border:1px solid var(--line);"></code>
+            </div>
+          </div>
+
+          <h3 style="font-size:15px; margin-bottom:12px;">Step 2: Enter the 6-Digit Code to Confirm</h3>
+          <div style="display:flex; gap:12px; max-width:320px;">
+            <input type="text" id="verifyTotpInput" maxlength="6" placeholder="000000" style="font-family:'IBM Plex Mono', monospace; text-align:center; font-size:16px; letter-spacing:3px;">
+            <button onclick="confirmMfaSetup()" class="btn btn-primary">Activate MFA</button>
+          </div>
+          <div id="mfaSetupMsg" style="margin-top:10px; font-size:13px;"></div>
+        </div>
+
+        <div id="mfaActiveView" style="display:none; background:var(--sage-soft); border:1px solid #c8decb; padding:14px; border-radius:4px;">
+          <span style="color:var(--sage); font-weight:600; font-size:14px;">✓ TOTP Multi-Factor Authentication is Active</span>
+          <p style="font-size:12.5px; color:var(--ink-soft); margin-top:4px;">
+            Your account is protected. Every login requires your password plus a time-based authenticator code.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>Campus Carpool Hub — VIT Vellore Transport Coordination</div>
+      <div>Multi-Factor Authentication & RBAC Engine</div>
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+  <script>
+    let tempMfaSecret = null;
+
+    function renderView() {
+      const auth = getAuth();
+      if (auth && auth.user) {
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('profileSection').style.display = 'block';
+
+        document.getElementById('profName').textContent = auth.user.name;
+        document.getElementById('profPhone').textContent = auth.user.phone;
+        document.getElementById('profRoleBadge').textContent = auth.user.role || 'STUDENT';
+        document.getElementById('profVerifyBadge').textContent = auth.user.isVerified ? 'VERIFIED' : 'UNVERIFIED';
+        document.getElementById('profVerifyBadge').className = auth.user.isVerified ? 'tag tag-sage' : 'tag tag-amber';
+
+        if (auth.user.twoFactorEnabled) {
+          document.getElementById('mfaInactiveView').style.display = 'none';
+          document.getElementById('mfaSetupView').style.display = 'none';
+          document.getElementById('mfaActiveView').style.display = 'block';
+        } else {
+          document.getElementById('mfaInactiveView').style.display = 'block';
+          document.getElementById('mfaActiveView').style.display = 'none';
+        }
+      } else {
+        document.getElementById('authSection').style.display = 'grid';
+        document.getElementById('profileSection').style.display = 'none';
+      }
+    }
+
+    // Register Handler
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('regError');
+      errEl.textContent = '';
+      const payload = {
+        name: document.getElementById('regName').value.trim(),
+        phone: document.getElementById('regPhone').value.trim(),
+        role: document.getElementById('regRole').value,
+        password: document.getElementById('regPassword').value
+      };
+
+      try {
+        const res = await fetch(API_URL + '/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Registration failed';
+          return;
+        }
+        showToast('Account registered! Please sign in.');
+        document.getElementById('registerForm').reset();
+        document.getElementById('loginPhone').value = payload.phone;
+      } catch (err) {
+        errEl.textContent = 'Server error: ' + err.message;
+      }
+    });
+
+    // Login Handler (Supports standard & 2-step TOTP)
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = '';
+
+      const payload = {
+        phone: document.getElementById('loginPhone').value.trim(),
+        password: document.getElementById('loginPassword').value,
+        totpCode: document.getElementById('loginTotp').value.trim()
+      };
+
+      try {
+        const res = await fetch(API_URL + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.status === 206 && data.mfaRequired) {
+          // MFA is enabled on this account - prompt for code
+          document.getElementById('mfaStep').style.display = 'block';
+          document.getElementById('loginTotp').focus();
+          showToast('MFA code required from your Authenticator app.');
+          return;
+        }
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Invalid credentials';
+          return;
+        }
+
+        setAuth(data.user, data.token);
+        showToast('Signed in successfully!');
+        renderView();
+      } catch (err) {
+        errEl.textContent = 'Server error: ' + err.message;
+      }
+    });
+
+    // Start MFA Setup (generates TOTP secret and QR Code)
+    async function startMfaSetup() {
+      const auth = getAuth();
+      if (!auth) return;
+      try {
+        const res = await fetch(API_URL + '/auth/mfa/setup', {
+          headers: { 'Authorization': 'Bearer ' + auth.token }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast(data.error || 'Failed to start MFA setup', true);
+          return;
+        }
+
+        tempMfaSecret = data.secret;
+        document.getElementById('mfaSecretText').textContent = data.secret;
+        document.getElementById('mfaSetupView').style.display = 'block';
+        document.getElementById('mfaInactiveView').style.display = 'none';
+
+        QRCode.toCanvas(document.getElementById('mfaQrCanvas'), data.otpauthUrl, { width: 140, margin: 1 });
+      } catch (err) {
+        showToast('Network error: ' + err.message, true);
+      }
+    }
+
+    // Confirm MFA Setup
+    async function confirmMfaSetup() {
+      const auth = getAuth();
+      const code = document.getElementById('verifyTotpInput').value.trim();
+      const msgEl = document.getElementById('mfaSetupMsg');
+      msgEl.textContent = '';
+
+      if (!code || code.length !== 6) {
+        msgEl.textContent = 'Please enter a valid 6-digit code';
+        msgEl.style.color = 'var(--brick)';
+        return;
+      }
+
+      try {
+        const res = await fetch(API_URL + '/auth/mfa/verify-setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + auth.token
+          },
+          body: JSON.stringify({ secret: tempMfaSecret, code })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          msgEl.textContent = data.error || 'Invalid TOTP code';
+          msgEl.style.color = 'var(--brick)';
+          return;
+        }
+
+        auth.user.twoFactorEnabled = true;
+        setAuth(auth.user, auth.token);
+        showToast('MFA Enabled Successfully!');
+        renderView();
+      } catch (err) {
+        msgEl.textContent = 'Error: ' + err.message;
+        msgEl.style.color = 'var(--brick)';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', renderView);
+  </script>
+</body>
+</html>

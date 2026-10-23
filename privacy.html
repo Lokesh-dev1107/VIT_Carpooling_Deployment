@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms, Safety & Privacy Policy — Campus Carpool</title>
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav id="mainNavbar" class="navbar"></nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Data Protection & Regulatory Compliance</div>
+      <h1>Campus Safety & Privacy Policy</h1>
+      <p class="lead">
+        Campus Carpool is built around strict data minimization, role-based privacy, and transparent fare-sharing standards compliant with the India Digital Personal Data Protection (DPDP) Act 2023 and GDPR guidelines.
+      </p>
+    </div>
+  </header>
+
+  <!-- Content Section -->
+  <main class="wrap" style="padding-bottom: 60px;">
+    
+    <div class="panel">
+      <h2>1. Sensitive Data Classification</h2>
+      <p style="margin-bottom: 16px; font-size: 14px; color: var(--ink-soft); line-height: 1.6;">
+        To ensure complete safety for students and drivers travelling to and from VIT Vellore, we classify all application data into three distinct security tiers:
+      </p>
+      <div class="grid-3">
+        <div class="stat-card" style="border-left: 3px solid var(--brick);">
+          <div class="stat-val" style="font-size: 16px; color: var(--brick);">Tier 1: Confidential</div>
+          <p style="font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5;">
+            User passwords, TOTP MFA secrets, and JWT private keys. Stored strictly as salted cryptographic hashes (bcrypt) and never in plain text.
+          </p>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid var(--amber-dot);">
+          <div class="stat-val" style="font-size: 16px; color: var(--amber-dot);">Tier 2: Protected PII</div>
+          <p style="font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5;">
+            Phone numbers, passenger names, and exact departure times. Masked to public viewers and only revealed upon mutual ride acceptance.
+          </p>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid var(--sage);">
+          <div class="stat-val" style="font-size: 16px; color: var(--sage);">Tier 3: Operational</div>
+          <p style="font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.5;">
+            Pickup location (e.g., Campus Main Gate), destination, total seats, and fare per seat. Made public to enable seamless carpool formation.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>2. Threat Agent Protection & Controls</h2>
+      <div class="grid-2">
+        <div style="padding-right: 12px;">
+          <span class="tag tag-brick" style="margin-bottom: 8px;">Threat Agent 1</span>
+          <h3 style="font-size: 16px; margin-bottom: 8px;">Fake Drivers & Phone Number Harvesters</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 12px;">
+            Unverified parties attempting to join or browse carpool listings to harvest student contact numbers or pose as campus cab operators.
+          </p>
+          <div style="background: var(--paper); border: 1px solid var(--line); padding: 12px; border-radius: 3px; font-size: 12.5px;">
+            <strong>Implemented Technical Controls:</strong>
+            <ul style="padding-left: 18px; margin-top: 6px; line-height: 1.6;">
+              <li>Mandatory campus driver verification by transport admins before ride claiming.</li>
+              <li>Dynamic phone number masking: passenger phone numbers remain <em>"Hidden until accepted"</em>.</li>
+              <li>Two-Factor Authentication (TOTP) on all driver and admin accounts.</li>
+            </ul>
+          </div>
+        </div>
+        <div style="padding-left: 12px; border-left: 1px solid var(--line);">
+          <span class="tag tag-amber" style="margin-bottom: 8px;">Threat Agent 2</span>
+          <h3 style="font-size: 16px; margin-bottom: 8px;">Malicious Seat Scalping & Denial of Service</h3>
+          <p style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 12px;">
+            Automated bots spamming fake reservations during exam exodus to deny legitimate VIT students seats to Katpadi Station or airports.
+          </p>
+          <div style="background: var(--paper); border: 1px solid var(--line); padding: 12px; border-radius: 3px; font-size: 12.5px;">
+            <strong>Implemented Technical Controls:</strong>
+            <ul style="padding-left: 18px; margin-top: 6px; line-height: 1.6;">
+              <li>Atomic database-level concurrency locks (MongoDB <code>$expr</code> size checks).</li>
+              <li>Cryptographic 6-character private group codes preventing open scraping.</li>
+              <li>Strict departure cutoffs (2-hour exit cutoff and 10-minute host lock).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>3. Regulatory Compliance Directives</h2>
+      <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13.5px; line-height: 1.6;">
+        <div style="border-left: 3px solid var(--indigo); padding-left: 14px;">
+          <strong>India DPDP Act 2023 & GDPR Article 5(1)(c) — Data Minimization:</strong>
+          <p style="color: var(--ink-soft); margin-top: 4px;">
+            Only the minimal necessary information (contact number and name) is collected for trip coordination. No background location telemetry or persistent GPS tracking is stored.
+          </p>
+        </div>
+        <div style="border-left: 3px solid var(--indigo); padding-left: 14px;">
+          <strong>GDPR Article 32 — Security of Processing & Resilience:</strong>
+          <p style="color: var(--ink-soft); margin-top: 4px;">
+            Requires technical and organizational measures to ensure system availability, confidentiality, and resilience against load spikes and unauthorized access.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="wrap footer-row">
+      <div>Campus Carpool Hub — VIT Vellore Transport Coordination</div>
+      <div>Designed with Editorial Typography & DPDP Privacy Safeguards</div>
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+</body>
+</html>
