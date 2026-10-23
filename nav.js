@@ -55,11 +55,11 @@ function updateNav() {
 
   let authStatusHtml = '';
   if (auth && auth.user) {
-    const roleClass = auth.user.role === 'ADMIN' ? 'tag-brick' : auth.user.role === 'DRIVER' ? 'tag-sage' : 'tag-indigo';
+    const roleClass = auth.user.role === 'ADMIN' ? 'tag-brick' : auth.user.role === 'DRIVER' ? 'tag-sage' : 'tag-neutral';
     authStatusHtml = `
       <div style="display:flex; align-items:center; gap:10px;">
         <span class="tag ${roleClass}" style="font-size:10.5px;">${auth.user.role}</span>
-        <a href="profile.html" class="nav-link" style="font-weight:600; color:var(--indigo);">
+        <a href="profile.html" class="nav-link" style="font-weight:600; color:var(--ink);">
           ${auth.user.name}
         </a>
         <button onclick="logoutUser()" class="btn-outline" style="padding:4px 10px; font-size:11.5px;">Logout</button>

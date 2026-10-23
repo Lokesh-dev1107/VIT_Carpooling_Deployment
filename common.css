@@ -6,8 +6,11 @@
   --ink: #1C1C1E;
   --ink-soft: #55555C;
   --line: #E1DFD8;
-  --indigo: #2B3A67;
-  --indigo-soft: #EEF0F6;
+
+  /* Primary accent set to classic charcoal ink instead of AI blue */
+  --indigo: #1C1C1E;
+  --indigo-soft: #F0EFEA;
+
   --sage: #5F7F63;
   --sage-soft: #EBF1EC;
   --brick: #A6402F;
@@ -53,7 +56,7 @@ body {
 .brand-mark {
   width: 28px;
   height: 28px;
-  background: var(--indigo);
+  background: var(--ink);
   color: #fff;
   border-radius: 4px;
   display: flex;
@@ -83,14 +86,14 @@ body {
   transition: color .15s;
 }
 .nav-link:hover, .nav-link.active {
-  color: var(--indigo);
+  color: var(--ink);
   font-weight: 600;
 }
 .nav-badge {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   background: var(--indigo-soft);
-  color: var(--indigo);
+  color: var(--ink);
   padding: 2px 7px;
   border-radius: 3px;
 }
@@ -156,7 +159,7 @@ p.lead {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 26px;
   font-weight: 600;
-  color: var(--indigo);
+  color: var(--ink);
 }
 .stat-lbl {
   font-size: 12px;
@@ -187,8 +190,8 @@ p.lead {
 }
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: none;
-  border-color: var(--indigo);
-  box-shadow: 0 0 0 3px rgba(43,58,103,0.1);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(28,28,30,0.1);
 }
 
 /* Buttons */
@@ -207,10 +210,10 @@ button, .btn {
   text-decoration: none;
   transition: all .15s;
 }
-.btn-primary { background: var(--indigo); color: #fff; }
-.btn-primary:hover { background: #1f2a4c; }
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: #333336; }
 .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--ink); }
-.btn-outline:hover { border-color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); background: #fff; }
 .btn-sage { background: var(--sage); color: #fff; }
 .btn-sage:hover { background: #4b664f; }
 .btn-danger { background: var(--brick); color: #fff; }
@@ -235,7 +238,7 @@ button, .btn {
   gap: 6px;
   font-weight: 500;
 }
-.tag-indigo { background: var(--indigo-soft); color: var(--indigo); border: 1px solid #d4dae8; }
+.tag-indigo { background: var(--indigo-soft); color: var(--ink); border: 1px solid var(--line); }
 .tag-sage { background: var(--sage-soft); color: var(--sage); border: 1px solid #d3e2d5; }
 .tag-brick { background: var(--brick-soft); color: var(--brick); border: 1px solid #f3d4cf; }
 .tag-amber { background: var(--amber-soft); color: var(--amber-dot); border: 1px solid #f5e4cd; }

@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { authenticator } = require('otplib');
+const { generateSecret, verifySync, generateURI } = require('otplib');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
 
@@ -74,8 +74,8 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      const isValidToken = authenticator.check(totpCode, user.twoFactorSecret);
-      if (!isValidToken) {
+      const verification = verifySync({ token: totpCode, secret: user.twoFactorSecret });
+      if (!verification || !verification.valid) {
         return res.status(401).json({ error: 'Invalid 6-digit Authenticator code' });
       }
     }
@@ -109,8 +109,8 @@ router.get('/mfa/setup', requireAuth, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const secret = authenticator.generateSecret();
-    const otpauthUrl = authenticator.keyuri(user.phone, 'Campus Carpool', secret);
+    const secret = generateSecret();
+    const otpauthUrl = generateURI({ issuer: 'Campus Carpool', label: user.phone, secret });
 
     res.json({ secret, otpauthUrl });
   } catch (err) {
@@ -126,8 +126,8 @@ router.post('/mfa/verify-setup', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Secret and 6-digit code are required' });
     }
 
-    const isValid = authenticator.check(code, secret);
-    if (!isValid) {
+    const verification = verifySync({ token: code, secret });
+    if (!verification || !verification.valid) {
       return res.status(400).json({ error: 'Invalid verification code. Please check your authenticator app.' });
     }
 

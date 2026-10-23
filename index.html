@@ -475,7 +475,7 @@
         legend.innerHTML = '<span class="legend-item">No active data</span>';
         return;
       }
-      const colors = { FORMING: '#B8863B', PENDING_DRIVER: '#2B3A67', CONFIRMED: '#5F7F63', EXPIRED: '#B7B5AC', CANCELLED: '#A6402F' };
+      const colors = { FORMING: '#B8863B', PENDING_DRIVER: '#1C1C1E', CONFIRMED: '#5F7F63', EXPIRED: '#B7B5AC', CANCELLED: '#A6402F' };
       track.innerHTML = byStatus.map(s => {
         const pct = (s.count / total) * 100;
         return `<div class="status-bar-segment" style="width:${pct}%;background:${colors[s._id] || '#888'};"></div>`;

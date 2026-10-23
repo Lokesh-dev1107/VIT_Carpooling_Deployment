@@ -77,8 +77,8 @@
           </div>
 
           <!-- MFA 6-digit Code input (reveals if account has MFA) -->
-          <div class="field" id="mfaStep" style="display:none; background:var(--indigo-soft); padding:12px; border-radius:4px; border:1px solid #d4dae8;">
-            <label for="loginTotp" style="color:var(--indigo); font-weight:600;">
+          <div class="field" id="mfaStep" style="display:none; background:var(--neutral-soft); padding:12px; border-radius:2px; border:1px solid var(--line);">
+            <label for="loginTotp" style="color:var(--ink); font-weight:600;">
               Enter 6-Digit Authenticator Code (TOTP)
             </label>
             <input type="text" id="loginTotp" placeholder="123456" maxlength="6" style="letter-spacing:4px; font-weight:600; text-align:center; font-family:'IBM Plex Mono', monospace;">
@@ -103,7 +103,7 @@
             <div class="eyebrow">Authenticated Profile</div>
             <h2 id="profName" style="margin-bottom:6px;">User Name</h2>
             <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-              <span id="profRoleBadge" class="tag tag-indigo">STUDENT</span>
+              <span id="profRoleBadge" class="tag tag-neutral">STUDENT</span>
               <span id="profVerifyBadge" class="tag tag-sage">VERIFIED</span>
               <span id="profPhone" style="font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--ink-soft);">+91 9876543210</span>
             </div>
@@ -287,7 +287,13 @@
         document.getElementById('mfaSetupView').style.display = 'block';
         document.getElementById('mfaInactiveView').style.display = 'none';
 
-        QRCode.toCanvas(document.getElementById('mfaQrCanvas'), data.otpauthUrl, { width: 140, margin: 1 });
+        try {
+          if (window.QRCode && window.QRCode.toCanvas) {
+            QRCode.toCanvas(document.getElementById('mfaQrCanvas'), data.otpauthUrl, { width: 140, margin: 1 });
+          }
+        } catch (qrErr) {
+          console.warn('QR rendering fallback:', qrErr);
+        }
       } catch (err) {
         showToast('Network error: ' + err.message, true);
       }
