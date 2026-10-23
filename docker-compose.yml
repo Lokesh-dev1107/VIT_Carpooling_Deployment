@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Replicated Backend Instance 1 (Hardened Alpine Container)
+  app-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardened
+    image: vit-carpool:hardened
+    container_name: vit-carpool-app-1
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - INSTANCE_ID=instance-1
+    env_file:
+      - .env
+    networks:
+      - carpool-network
+
+  # Replicated Backend Instance 2 (Hardened Alpine Container)
+  app-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardened
+    image: vit-carpool:hardened
+    container_name: vit-carpool-app-2
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - INSTANCE_ID=instance-2
+    env_file:
+      - .env
+    networks:
+      - carpool-network
+
+  # Replicated Backend Instance 3 (Hardened Alpine Container)
+  app-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.hardened
+    image: vit-carpool:hardened
+    container_name: vit-carpool-app-3
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - INSTANCE_ID=instance-3
+    env_file:
+      - .env
+    networks:
+      - carpool-network
+
+  # Nginx Reverse Proxy / Layer 7 Load Balancer
+  load-balancer:
+    image: nginx:alpine
+    container_name: vit-carpool-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app-1
+      - app-2
+      - app-3
+    networks:
+      - carpool-network
+
+networks:
+  carpool-network:
+    driver: bridge

@@ -15,6 +15,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Expose instance identifier for load balancing verification (Question 1)
+const INSTANCE_ID = process.env.INSTANCE_ID || 'standalone-instance';
+app.use((req, res, next) => {
+  res.setHeader('X-Handled-By', INSTANCE_ID);
+  next();
+});
+
 app.get('/', (req, res) => {
   res.send('Campus Carpool Hub API is running!');
 });
