@@ -15,7 +15,7 @@ const http = require('http');
 function makeRequest(reqNum) {
   return new Promise((resolve) => {
     const startTime = Date.now();
-    const req = http.get('http://localhost:8080/', (res) => {
+    const req = http.get('http://localhost:8088/', (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
@@ -46,7 +46,7 @@ async function run1aDemo() {
   console.log('   QUESTION 1a: NGINX ROUND-ROBIN LOAD DISTRIBUTION TEST (3 REPLICAS)          ');
   console.log('================================================================================\n');
 
-  console.log('Target Load Balancer: http://localhost:8080/');
+  console.log('Target Load Balancer: http://localhost:8088/');
   console.log('Dispatching 9 consecutive requests to verify Round-Robin rotation...\n');
 
   const results = [];
