@@ -7,7 +7,7 @@ A production-ready, cloud-native peer-to-peer carpooling web application designe
 ## 📌 Architecture Overview
 
 ```
-<img width="1191" height="861" alt="image" src="https://github.com/user-attachments/assets/021dc46c-1b3f-45bb-88c9-e491f224c4b4" />
+
 
                         [ Client Browsers & Mobile Devices ]
                                          │
