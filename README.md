@@ -7,6 +7,8 @@ A production-ready, cloud-native peer-to-peer carpooling web application designe
 ## 📌 Architecture Overview
 
 ```
+
+
                         [ Client Browsers & Mobile Devices ]
                                          │
                                    HTTP / REST
