@@ -1,6 +1,6 @@
-# Campus Carpool — VIT Vellore Transport Coordination
+# Campus Carpool — VIT Campuses Transport Coordination
 
-A production-ready, cloud-native peer-to-peer carpooling web application designed for the VIT Vellore student community. It enables students to form cab pools to railway stations and airports, split fares transparently, and connect with campus-verified drivers via real-time WebSockets, robust role-based access control (RBAC), multi-factor authentication (MFA), and containerized load balancing.
+A production-ready, cloud-native peer-to-peer carpooling web application designed for the VIT Campuses student community. It enables students to form cab pools to railway stations and airports, split fares transparently, and connect with campus-verified drivers via real-time WebSockets, robust role-based access control (RBAC), multi-factor authentication (MFA), and containerized load balancing.
 
 ---
 
