@@ -282,11 +282,17 @@ router.delete('/:id/cancel-auth', requireAuth, async (req, res) => {
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
     const host = group.members.find(m => m.isHost);
-    const isHost = host && host.contact === req.user.phone;
-    const isAdmin = req.user.role === 'ADMIN';
+    
+    // Strict phone normalization to ensure accurate host matching
+    const normalize = (p) => (p || '').replace(/\D/g, '').slice(-10);
+    const hostPhone = host ? normalize(host.contact) : '';
+    const userPhone = req.user ? normalize(req.user.phone) : '';
+
+    const isHost = Boolean(hostPhone && userPhone && hostPhone === userPhone);
+    const isAdmin = Boolean(req.user && req.user.role === 'ADMIN');
 
     if (!isHost && !isAdmin) {
-      return res.status(403).json({ error: 'Forbidden: Only the ride host or a campus administrator can cancel this ride' });
+      return res.status(403).json({ error: 'Forbidden: Only the verified group host or a transport administrator can cancel this carpool' });
     }
 
     group.status = 'CANCELLED';

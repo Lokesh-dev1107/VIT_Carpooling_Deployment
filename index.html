@@ -549,9 +549,11 @@
       container.innerHTML = filtered.map(g => {
         const seatsFilled = g.members.length;
         const [dotCls, textCls, label] = statusMeta(g.status);
-        const amMember = g.members && g.members.some(m => m.contact === userPhone);
+        const normPhone = (p) => (p || '').replace(/\D/g, '').slice(-10);
+        const cleanPhone = normPhone(userPhone);
+        const amMember = Boolean(cleanPhone && g.members && g.members.some(m => normPhone(m.contact) === cleanPhone));
         const hostMember = g.members && g.members.find(m => m.isHost);
-        const amHost = hostMember && hostMember.contact === userPhone;
+        const amHost = Boolean(cleanPhone && hostMember && normPhone(hostMember.contact) === cleanPhone);
 
         const isStep2 = g.status !== 'FORMING';
         const isStep3 = g.status === 'CONFIRMED';

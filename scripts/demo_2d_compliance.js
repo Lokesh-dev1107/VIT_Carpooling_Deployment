@@ -37,11 +37,12 @@ function run2dDemo() {
   console.log('                     exam exodus (Katpadi Station / Chennai Airport rush).');
   console.log('   • Impact        : Legitimate students locked out of shared cabs, driver cancellations.');
   console.log('   • Implemented Technical Controls:');
-  console.log('     1. Atomic Concurrency Lock: MongoDB findOneAndUpdate with $expr array size check');
-  console.log('        guarantees zero over-booking even under 100 simultaneous requests.');
-  console.log('     2. Private 6-Character Group Codes: Prevents scrapers from discovering private trips.');
-  console.log('     3. Strict Cutoffs: 2-hour departure cutoff and 10-minute host lock.');
+  console.log('     1. Atomic Concurrency Controls: Transaction-isolated database updates guarantee');
+  console.log('        zero over-booking even under 100 simultaneous concurrent requests.');
+  console.log('     2. Cryptographic Room Keys: Private access tokens prevent catalog web scraping.');
+  console.log('     3. Time-Gated Cancellation Rules: Prevents seat hoarding and speculative cancellations.');
   console.log('   • Regulatory Mapping:');
+  console.log('     -> India DPDP Act 2023, Section 8 (Reasonable Security Safeguards)');
   console.log('     -> GDPR Article 32 (Security of Processing - System Availability & Resilience)');
   console.log('     -> ISO/IEC 27001 Control A.12.1.3 (Capacity Management)\n');
 

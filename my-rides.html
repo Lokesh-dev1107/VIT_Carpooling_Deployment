@@ -101,9 +101,12 @@
 
         // Filter groups where the current user is a passenger, host, or driver
         const userPhone = auth.user.phone;
+        const normPhone = (p) => (p || '').replace(/\D/g, '').slice(-10);
+        const cleanUserPhone = normPhone(userPhone);
+
         const myGroups = groups.filter(g => {
-          const isPassenger = g.members && g.members.some(m => m.contact === userPhone);
-          const isAssignedDriver = g.driverContact === userPhone;
+          const isPassenger = Boolean(cleanUserPhone && g.members && g.members.some(m => normPhone(m.contact) === cleanUserPhone));
+          const isAssignedDriver = Boolean(cleanUserPhone && normPhone(g.driverContact) === cleanUserPhone);
           return isPassenger || isAssignedDriver;
         });
 
@@ -118,9 +121,9 @@
         }
 
         listEl.innerHTML = myGroups.map(g => {
-          const isDriver = g.driverContact === userPhone;
-          const myMemberRecord = g.members ? g.members.find(m => m.contact === userPhone) : null;
-          const isHost = myMemberRecord && myMemberRecord.isHost;
+          const isDriver = Boolean(cleanUserPhone && normPhone(g.driverContact) === cleanUserPhone);
+          const myMemberRecord = g.members ? g.members.find(m => cleanUserPhone && normPhone(m.contact) === cleanUserPhone) : null;
+          const isHost = Boolean(myMemberRecord && myMemberRecord.isHost);
 
           const statusBadge = g.status === 'CONFIRMED'
             ? `<span class="tag tag-sage">CONFIRMED</span>`
